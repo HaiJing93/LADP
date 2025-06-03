@@ -4,6 +4,7 @@ Wrapper around Azure OpenAI chat completion with optional RAG context.
 *Upgrade*: retrieved PDF chunks are prefixed with **[filename p.X]**
 so the model can keep multiple statements separate.
 """
+
 from __future__ import annotations
 
 import json
@@ -45,6 +46,7 @@ def _json_bytes_safe(obj: Any) -> int:
 
     Non-dict items are converted via .model_dump() if present, else str().
     """
+
     def _to_dict(x):
         if isinstance(x, dict):
             return x
@@ -81,6 +83,13 @@ def ask_llm(
             print(ctx)  # optional: inspect injected PDF text
 
     messages_openai = [{"role": "system", "content": sys_prompt}] + messages
+
+    # Ensure OpenAI API always receives string content
+    for m in messages_openai:
+        if m.get("content") is None:
+            m["content"] = ""
+        else:
+            m["content"] = str(m["content"])
 
     # ---------------- DEBUG payload summary -------------------------------- #
     tool_names = [t["function"]["name"] for t in TOOLS]
