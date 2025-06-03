@@ -33,3 +33,4 @@ matplotlib>=3.8          # for pie-chart rendering
 
 # ---- Yahoo Finance -------------------------------------------------
 yfinance>=0.2.6
+openpyxl>=3.1.0

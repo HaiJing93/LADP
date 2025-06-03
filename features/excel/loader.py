@@ -20,5 +20,6 @@ def load_excel(file):
     except Exception:
         pass
 
-    xls = pd.ExcelFile(file)
+    # Use openpyxl for .xlsx files if installed
+    xls = pd.ExcelFile(file, engine="openpyxl")
     return {sheet: xls.parse(sheet) for sheet in xls.sheet_names}
