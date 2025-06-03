@@ -111,6 +111,26 @@ DRAWDOWN_TOOL_SCHEMA = {
 }
 
 # ------------------------------------------------------------------- #
+#  Excel schema                                                       #
+# ------------------------------------------------------------------- #
+
+EXCEL_TOOL_SCHEMA = {
+    "name": "get_excel_data",
+    "description": (
+        "Return a JSON array of rows from an uploaded Excel sheet. "
+        "Use this to inspect tabular data provided by the user."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {"type": "string"},
+            "rows": {"type": "integer", "default": 5},
+        },
+        "required": ["sheet"],
+    },
+}
+
+# ------------------------------------------------------------------- #
 #  Master list passed to OpenAI                                       #
 # ------------------------------------------------------------------- #
 TOOLS = [
@@ -120,4 +140,5 @@ TOOLS = [
     {"type": "function", "function": QUOTE_TOOL_SCHEMA},      # ← NEW
     {"type": "function", "function": HISTORY_TOOL_SCHEMA},
     {"type": "function", "function": DRAWDOWN_TOOL_SCHEMA},    # ← NEW
+    {"type": "function", "function": EXCEL_TOOL_SCHEMA},
 ]

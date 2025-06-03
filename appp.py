@@ -5,7 +5,6 @@
 from __future__ import annotations   # must be first executable line
 
 import json
-from pathlib import Path
 import pandas as pd
 import streamlit as st
 
@@ -20,6 +19,7 @@ from features.analytics.portfolio import (
     max_drawdown,
 )
 from features.marketdata.yahoo import get_stock_quote, get_stock_history
+from features.excel.loader import load_excel
 
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
@@ -64,6 +64,25 @@ with st.sidebar:
                 st.info("These PDFs were already indexed – nothing new added.")
         else:
             st.error("No readable text found in the uploaded PDFs.")
+
+    st.header("📊 Excel Data")
+    excel_file = st.file_uploader(
+        "Upload Excel",
+        type=["xlsx", "xls"],
+        accept_multiple_files=False,
+        key="excel_upload",
+    )
+
+    if excel_file is not None:
+        try:
+            excel_data = load_excel(excel_file)
+            st.session_state["excel_data"] = excel_data
+            sheet_names = list(excel_data)
+            if sheet_names:
+                sheet = st.selectbox("Sheet", sheet_names, key="excel_sheet")
+                st.dataframe(excel_data[sheet])
+        except Exception as exc:
+            st.error(f"Failed to load Excel: {exc}")
 
 # --------------------------------------------------------------------------- #
 # Conversation history                                                        #
@@ -194,6 +213,20 @@ if user_input:
                     st.markdown(f"**Maximum draw-down:** {dd*100:.2f}%")
 
                 tool_content = json.dumps({"max_drawdown": dd})
+
+            # ---------- excel data --------------------------------------- #
+            elif name == "get_excel_data":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available."
+                else:
+                    sheet = args.get("sheet")
+                    rows = int(args.get("rows", 5))
+                    df = excel_data.get(sheet)
+                    if df is None:
+                        tool_content = f"Sheet '{sheet}' not found."
+                    else:
+                        tool_content = df.head(rows).to_json(orient="records")
 
             # ---------- fallback ------------------------------------------ #
             else:
