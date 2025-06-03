@@ -11,6 +11,7 @@ import streamlit as st
 
 from config.settings import settings
 from features.pdfs.indexer import index_pdfs
+from features.excel.indexer import index_excels
 from features.llm.chat import ask_llm
 from features.analytics.charts import draw_pie
 from features.analytics.portfolio import (
@@ -43,27 +44,45 @@ with tab_settings:
 # Sidebar – PDF upload & indexing                                             #
 # --------------------------------------------------------------------------- #
 with st.sidebar:
-    st.header("📄 PDF Knowledge Base")
-    files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
+    st.header("📄 Document Knowledge Base")
+    pdf_files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
+    excel_files = st.file_uploader(
+        "Upload Excel", type=["xls", "xlsx"], accept_multiple_files=True
+    )
     st.caption(f"Embeddings deployment: {settings.EMBED_DEPLOYMENT}")
 
-    if st.button("Build / Update index", disabled=not files):
+    if st.button(
+        "Build / Update index", disabled=not pdf_files and not excel_files
+    ):
         vs_existing = st.session_state.get("vectorstore")
         with st.spinner("Indexing…"):
-            vectorstore, new_chunks = index_pdfs(
-                files,
-                chunk_size=st.session_state.get("chunk_size", 600),
-                chunk_overlap=st.session_state.get("chunk_overlap", 150),
-                existing_vs=vs_existing,
-            )
+            vectorstore = vs_existing
+            new_chunks = 0
+            if pdf_files:
+                vectorstore, added = index_pdfs(
+                    pdf_files,
+                    chunk_size=st.session_state.get("chunk_size", 600),
+                    chunk_overlap=st.session_state.get("chunk_overlap", 150),
+                    existing_vs=vectorstore,
+                )
+                new_chunks += added
+            if excel_files:
+                vectorstore, added = index_excels(
+                    excel_files,
+                    chunk_size=st.session_state.get("chunk_size", 600),
+                    chunk_overlap=st.session_state.get("chunk_overlap", 150),
+                    existing_vs=vectorstore,
+                )
+                new_chunks += added
+
         if vectorstore:
             st.session_state.vectorstore = vectorstore
             if new_chunks:
                 st.success(f"Added **{new_chunks:,}** new chunk(s).")
             else:
-                st.info("These PDFs were already indexed – nothing new added.")
+                st.info("These documents were already indexed – nothing new added.")
         else:
-            st.error("No readable text found in the uploaded PDFs.")
+            st.error("No readable text found in the uploaded files.")
 
 # --------------------------------------------------------------------------- #
 # Conversation history                                                        #
