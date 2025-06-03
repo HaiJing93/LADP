@@ -21,4 +21,17 @@ def load_excel(file):
         pass
 
     xls = pd.ExcelFile(file)
-    return {sheet: xls.parse(sheet) for sheet in xls.sheet_names}
+    result: dict[str, pd.DataFrame] = {}
+    for sheet in xls.sheet_names:
+        df = xls.parse(sheet)
+
+        # Convert any Unix timestamp columns to human-readable dates.
+        for col in df.columns:
+            name = str(col).lower()
+            if "unix" in name and "ts" in name:
+                df[col] = pd.to_datetime(df[col], unit="s", errors="coerce")
+                df[col] = df[col].dt.strftime("%d/%m/%y")
+
+        result[sheet] = df
+
+    return result
