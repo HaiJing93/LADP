@@ -20,6 +20,7 @@ from features.analytics.portfolio import (
     max_drawdown,
 )
 from features.marketdata.yahoo import get_stock_quote, get_stock_history
+from features.excel.loader import load_excel
 
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
@@ -64,6 +65,16 @@ with st.sidebar:
                 st.info("These PDFs were already indexed – nothing new added.")
         else:
             st.error("No readable text found in the uploaded PDFs.")
+
+    st.header("📊 Excel Sheets")
+    excel_file = st.file_uploader("Upload Excel", type=("xlsx", "xls"))
+    if excel_file:
+        sheets = load_excel(excel_file)
+        st.session_state["excel_sheets"] = sheets
+        st.success("Loaded sheets: " + ", ".join(sheets.keys()))
+        for name, df in sheets.items():
+            st.subheader(name)
+            st.dataframe(df.head())
 
 # --------------------------------------------------------------------------- #
 # Conversation history                                                        #
