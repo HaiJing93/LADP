@@ -1,10 +1,11 @@
 """
 Wrapper around Azure OpenAI chat completion with optional RAG context.
 
-*Upgrade*: retrieved PDF chunks are prefixed with **[filename p.X]**
-so the model can keep multiple statements separate.
+v2.8.1
+• Fix: Excel tool now wrapped the same way as other tools, avoiding KeyError.
+• Fix: debug print accesses name via ["function"]["name"].
+• Keeps PDF-chunk prefixing and the Excel-tool prompt hint.
 """
-
 from __future__ import annotations
 
 import json
@@ -14,11 +15,41 @@ from openai import AzureOpenAI, OpenAIError
 
 from config.settings import settings
 from .prompts import build_system_prompt
-from .tools import TOOLS
-
+from .tools import TOOLS as _BASE_TOOLS  # ← existing master list
 
 # --------------------------------------------------------------------------- #
-# Azure OpenAI client (kept alive across calls)                               #
+# Excel-specific tool schema                                                  #
+# --------------------------------------------------------------------------- #
+_EXCEL_TOOL_SCHEMA = {
+    "name": "get_excel_data",
+    "description": (
+        "Return a JSON preview of a sheet from the user-uploaded Excel "
+        "workbook. Call this whenever the user asks about spreadsheet data."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {
+                "type": "string",
+                "description": "Exact sheet name (case-sensitive)."
+            },
+            "rows": {
+                "type": "integer",
+                "description": "How many rows to return (default 5).",
+                "default": 5
+            },
+        },
+        "required": ["sheet"],
+    },
+}
+
+# Wrap just like all the other tools
+TOOLS = _BASE_TOOLS + [
+    {"type": "function", "function": _EXCEL_TOOL_SCHEMA}
+]
+
+# --------------------------------------------------------------------------- #
+# Azure OpenAI client (singleton)                                             #
 # --------------------------------------------------------------------------- #
 client = AzureOpenAI(
     api_key=settings.API_KEY,
@@ -26,12 +57,11 @@ client = AzureOpenAI(
     azure_endpoint=settings.BASE_ENDPOINT,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
 def _format_ctx_docs(docs: Sequence) -> str:
-    """Return context string with [filename p.X] prefixes for each chunk."""
+    """Make a single context string with [filename p.X] prefixes."""
     lines: list[str] = []
     for d in docs:
         src = d.metadata.get("source", "PDF")
@@ -42,11 +72,8 @@ def _format_ctx_docs(docs: Sequence) -> str:
 
 def _json_bytes_safe(obj: Any) -> int:
     """
-    Return len(json.dumps(obj)) even when obj contains OpenAI objects.
-
-    Non-dict items are converted via .model_dump() if present, else str().
+    len(json.dumps(obj)) even when obj contains pydantic/OpenAI models.
     """
-
     def _to_dict(x):
         if isinstance(x, dict):
             return x
@@ -60,7 +87,6 @@ def _json_bytes_safe(obj: Any) -> int:
     except TypeError:
         return len(json.dumps([_to_dict(i) for i in obj]))
 
-
 # --------------------------------------------------------------------------- #
 # Public API                                                                  #
 # --------------------------------------------------------------------------- #
@@ -71,31 +97,29 @@ def ask_llm(
     *,
     top_k: int = 6,
 ):
-    """Call Azure OpenAI chat, injecting *top_k* similarity matches from PDFs."""
+    """Call Azure ChatGPT, adding RAG context + tool list."""
     sys_prompt = build_system_prompt()
 
-    # Inject similarity context from PDFs
+    # Inject PDF-similarity context
     if vectorstore and user_input.strip():
         ctx_docs = vectorstore.similarity_search(user_input, k=top_k)
         ctx = _format_ctx_docs(ctx_docs)
         if ctx:
             sys_prompt = build_system_prompt(ctx)
-            print(ctx)  # optional: inspect injected PDF text
+
+    # Tell the model explicitly when to call the Excel tool
+    sys_prompt += (
+        "\n\nIf the user requests data that lives in the uploaded Excel "
+        "workbook, call the `get_excel_data` function."
+    )
 
     messages_openai = [{"role": "system", "content": sys_prompt}] + messages
 
-    # Ensure OpenAI API always receives string content
-    for m in messages_openai:
-        if m.get("content") is None:
-            m["content"] = ""
-        else:
-            m["content"] = str(m["content"])
-
     # ---------------- DEBUG payload summary -------------------------------- #
     tool_names = [t["function"]["name"] for t in TOOLS]
-    print("TOOLS SENT TO OPENAI:", tool_names)
-    print("MESSAGE COUNT       :", len(messages_openai))
-    print("JSON BYTES (approx) :", _json_bytes_safe(messages_openai))
+    print("TOOLS SENT TO OPENAI :", tool_names)
+    print("MESSAGE COUNT        :", len(messages_openai))
+    print("JSON BYTES (approx)  :", _json_bytes_safe(messages_openai))
     # ----------------------------------------------------------------------- #
 
     try:
@@ -112,7 +136,7 @@ def ask_llm(
         if resp is not None:
             print("AZURE API STATUS:", resp.status_code)
             try:
-                print("AZURE API BODY :", resp.json())
+                print("AZURE API BODY   :", resp.json())
             except Exception:
                 print("AZURE API BODY (raw):", resp.text)
         raise
