@@ -127,7 +127,10 @@ def compute_portfolio_metrics(
 
     annualized_volatility = returns_series.std(ddof=0) * math.sqrt(periods_per_year)
 
-    mdd = max_drawdown(series, is_prices=is_prices)
+    if is_prices:
+        mdd = max_drawdown(series, is_prices=True)
+    else:
+        mdd = max_drawdown(returns_series, is_prices=False)
 
     return {
         "cumulative_return": cumulative_return,
