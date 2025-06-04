@@ -255,9 +255,9 @@ if user_input:
             st.session_state.messages + [assistant_call_msg] + tool_messages,
             None, "", top_k=0,
         )
-        assistant_reply = follow_resp.choices[0].message.content
+        assistant_reply = follow_resp.choices[0].message.content or ""
     else:
-        assistant_reply = choice.message.content
+        assistant_reply = choice.message.content or ""
 
     st.chat_message("assistant").markdown(assistant_reply)
     st.session_state.messages.append(
