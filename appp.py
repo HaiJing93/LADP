@@ -2,7 +2,7 @@
 # --------------------------------------------------------------------------- #
 # PDF-Aware Finance Chatbot (Azure OpenAI) – v2.7                             #
 # --------------------------------------------------------------------------- #
-from __future__ import annotations   # must be first executable line
+from __future__ import annotations  # must be first executable line
 
 import json
 from pathlib import Path
@@ -25,8 +25,9 @@ from features.excel.loader import load_excel
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
 # --------------------------------------------------------------------------- #
-st.set_page_config(page_title="PDF-Aware Finance Chatbot",
-                   page_icon="🤖", layout="centered")
+st.set_page_config(
+    page_title="PDF-Aware Finance Chatbot", page_icon="🤖", layout="centered"
+)
 st.title("🤖 PDF-Aware Finance Chatbot (Azure OpenAI)")
 
 # --------------------------------------------------------------------------- #
@@ -45,7 +46,9 @@ with tab_settings:
 # --------------------------------------------------------------------------- #
 with st.sidebar:
     st.header("📄 PDF Knowledge Base")
-    files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
+    files = st.file_uploader(
+        "Upload PDFs", type="pdf", accept_multiple_files=True
+    )
     st.caption(f"Embeddings deployment: {settings.EMBED_DEPLOYMENT}")
 
     if st.button("Build / Update index", disabled=not files):
@@ -65,7 +68,7 @@ with st.sidebar:
                 st.info("These PDFs were already indexed – nothing new added.")
         else:
             st.error("No readable text found in the uploaded PDFs.")
-     
+
     st.header("📊 Excel Data")
     excel_file = st.file_uploader(
         "Upload Excel",
@@ -127,25 +130,26 @@ if user_input:
             # ---------- portfolio metrics --------------------------------- #
             elif name == "calculate_portfolio_metrics":
                 ppy = args.get("periods_per_year") or (
-                    1 if len(args["series"]) <= 12 else
-                    12 if len(args["series"]) <= 60 else 252
+                    1
+                    if len(args["series"]) <= 12
+                    else 12 if len(args["series"]) <= 60 else 252
                 )
                 metrics = compute_portfolio_metrics(
                     args["series"],
                     is_prices=args.get("is_prices", True),
                     periods_per_year=ppy,
+                    returns_are_percent=args.get("returns_are_percent"),
                 )
                 render_metrics_table(metrics)
                 tool_content = f"Portfolio metrics calculated (ppy={ppy})"
 
             # ---------- yearly perf --------------------------------------- #
             elif name == "calculate_yearly_performance":
-                year_df = (
-                    pd.DataFrame.from_dict(
-                        yearly_performance(args["dates"], args["returns"]),
-                        orient="index", columns=["Return"]
-                    ).sort_index()
-                )
+                year_df = pd.DataFrame.from_dict(
+                    yearly_performance(args["dates"], args["returns"]),
+                    orient="index",
+                    columns=["Return"],
+                ).sort_index()
                 st.markdown("### Yearly Performance")
                 st.table(year_df.style.format({"Return": "{:.2%}"}))
                 tool_content = "Yearly performance table rendered."
@@ -164,10 +168,13 @@ if user_input:
             # ---------- price history ------------------------------------- #
             elif name == "get_stock_history":
                 period_hint = args.get("period") or (
-                    "6mo" if "6 month" in user_input.lower()
-                    else "3mo" if "3 month" in user_input.lower()
-                    else "ytd" if "ytd" in user_input.lower()
-                    else "1y"
+                    "6mo"
+                    if "6 month" in user_input.lower()
+                    else (
+                        "3mo"
+                        if "3 month" in user_input.lower()
+                        else "ytd" if "ytd" in user_input.lower() else "1y"
+                    )
                 )
                 series = get_stock_history(
                     args["ticker"],
@@ -182,11 +189,14 @@ if user_input:
                 if len(series) > 1 and "plot" in user_input.lower():
                     dates, prices = zip(*series)
                     st.line_chart(
-                        pd.DataFrame({"Price": prices},
-                                     index=pd.to_datetime(dates))
+                        pd.DataFrame(
+                            {"Price": prices}, index=pd.to_datetime(dates)
+                        )
                     )
                 elif len(series) <= 1:
-                    st.warning("Only one data point returned; unable to plot a series.")
+                    st.warning(
+                        "Only one data point returned; unable to plot a series."
+                    )
 
             # ---------- max draw-down ------------------------------------- #
             elif name == "calculate_max_drawdown":
@@ -196,14 +206,18 @@ if user_input:
                 # fallback 1 – cached series from last history call
                 if not series_vals:
                     try:
-                        series_vals = [p for _, p in st.session_state.get("last_series", [])]
+                        series_vals = [
+                            p
+                            for _, p in st.session_state.get("last_series", [])
+                        ]
                     except Exception:
                         series_vals = st.session_state.get("last_series", [])
 
                 # fallback 2 – fetch via ticker if provided
                 if not series_vals and args.get("ticker"):
                     series_vals = [
-                        p for _, p in get_stock_history(
+                        p
+                        for _, p in get_stock_history(
                             args["ticker"],
                             period=args.get("period", "1y"),
                             interval=args.get("interval", "1d"),
@@ -211,16 +225,19 @@ if user_input:
                     ]
 
                 if len(series_vals) <= 1:
-                    st.warning("No price series available to compute draw-down.")
+                    st.warning(
+                        "No price series available to compute draw-down."
+                    )
                     dd = float("nan")
                 else:
-                    dd = max_drawdown(series_vals, is_prices=args.get("is_prices", True))
+                    dd = max_drawdown(
+                        series_vals, is_prices=args.get("is_prices", True)
+                    )
                     st.markdown(f"**Maximum draw-down:** {dd*100:.2f}%")
 
                 tool_content = json.dumps({"max_drawdown": dd})
 
-
-                            # ---------- excel data --------------------------------------- #
+                # ---------- excel data --------------------------------------- #
             elif name == "get_excel_data":
                 excel_data = st.session_state.get("excel_data")
                 if not excel_data:
@@ -253,7 +270,9 @@ if user_input:
 
         follow_resp = ask_llm(
             st.session_state.messages + [assistant_call_msg] + tool_messages,
-            None, "", top_k=0,
+            None,
+            "",
+            top_k=0,
         )
         assistant_reply = follow_resp.choices[0].message.content or ""
     else:
