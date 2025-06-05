@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from datetime import datetime
-from typing import Literal, List, Tuple, Dict
+from typing import Literal, Dict
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,6 @@ import yfinance as yf
 
 
 Interval = Literal["1m", "5m", "15m", "30m", "60m", "1d", "1wk", "1mo"]
-
 
 # ----------------------------------------------------------------------- #
 # Helpers                                                                 #
@@ -50,8 +49,6 @@ def _to_float(x) -> float:
     numeric element. Falls back to NaN when conversion isn’t possible.
     """
     import numbers
-    import numpy as np
-    import pandas as pd
 
     # 1) Simple numeric scalar
     if isinstance(x, numbers.Number):
@@ -61,7 +58,7 @@ def _to_float(x) -> float:
     if isinstance(x, np.ndarray) and x.ndim == 0:
         return float(x.item())
 
-    # 3) pandas Series (length 1  *or* multi-element — pick first numeric)
+    # 3) pandas Series (length-1 *or* multi-element — pick first numeric)
     if isinstance(x, pd.Series):
         if x.empty:
             return float("nan")
@@ -76,7 +73,6 @@ def _to_float(x) -> float:
     # 5) Anything else → NaN (won’t crash downstream calcs)
     return float("nan")
 
-
 # ----------------------------------------------------------------------- #
 # Public helpers                                                          #
 # ----------------------------------------------------------------------- #
@@ -88,11 +84,9 @@ def get_stock_history(
     col: str = "Adj Close",
 ) -> list[tuple[str, float]]:
     """
-    Fetch historical prices via Ticker.history().  Guaranteed ≥2 rows
+    Fetch historical prices via Ticker.history(). Guaranteed ≥2 rows
     when data exists; falls back to .download('max') then slices.
     """
-    import pandas as pd
-    import numpy as np
     ticker = ticker.upper()
 
     def _pull_hist(p: str, i: str) -> pd.Series:
@@ -110,14 +104,11 @@ def get_stock_history(
 
     # fallback - full max then slice
     if len(s) <= 1:
-        max_df = yf.Ticker(ticker).history(period="max", interval="1d",
-                                           auto_adjust=False)
+        max_df = yf.Ticker(ticker).history(period="max", interval="1d", auto_adjust=False)
         max_df.index = pd.to_datetime(max_df.index, errors="coerce")
         if not max_df.empty:
-            days_map = {"1mo": 30, "3mo": 90, "6mo": 180,
-                        "1y": 365, "2y": 730, "ytd": 400}
-            cutoff = max_df.index.max() - pd.Timedelta(
-                days_map.get(period, 365))
+            days_map = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "ytd": 400}
+            cutoff = max_df.index.max() - pd.Timedelta(days_map.get(period, 365))
             s = (max_df[col] if col in max_df else max_df["Close"]).dropna()
             s = s[s.index >= cutoff]
 
@@ -125,7 +116,7 @@ def get_stock_history(
     return [
         (
             idx.strftime("%Y-%m-%d"),
-            float(val) if np.isscalar(val) else float(val.iloc[0])
+            float(val) if np.isscalar(val) else float(val.iloc[0]),
         )
         for idx, val in s.items()
     ]
@@ -164,7 +155,7 @@ def get_fx_rate(pair: str) -> Dict:
     pct = (price / prev_close - 1) * 100 if prev_close else None
 
     return {
-        "pair": pair.upper().replace("/", "/"),
+        "pair": pair.upper(),
         "rate": price,
         "changePct": pct,
         "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
