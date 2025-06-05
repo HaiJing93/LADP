@@ -151,3 +151,21 @@ def get_stock_quote(ticker: str) -> Dict:
         "pe": info.get("trailing_pe"),
         "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
+
+
+def get_fx_rate(pair: str) -> Dict:
+    """Return the latest FX spot rate for ``pair`` like ``USD/SGD``."""
+    sym = pair.replace("/", "").upper()
+    T = yf.Ticker(f"{sym}=X")
+    info = T.fast_info
+
+    price = float(info["last_price"])
+    prev_close = float(info["previous_close"])
+    pct = (price / prev_close - 1) * 100 if prev_close else None
+
+    return {
+        "pair": pair.upper().replace("/", "/"),
+        "rate": price,
+        "changePct": pct,
+        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
