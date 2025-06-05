@@ -19,7 +19,11 @@ from features.analytics.portfolio import (
     yearly_performance,
     max_drawdown,
 )
-from features.marketdata.yahoo import get_stock_quote, get_stock_history
+from features.marketdata.yahoo import (
+    get_stock_quote,
+    get_stock_history,
+    get_fx_rate,
+)
 from features.excel.loader import load_excel
 
 # --------------------------------------------------------------------------- #
@@ -164,6 +168,14 @@ if user_input:
                     f"Trailing P/E: {q['pe'] or 'N/A'}"
                 )
                 tool_content = json.dumps(q)
+
+            # ---------- fx rate ------------------------------------------- #
+            elif name == "get_fx_rate":
+                fx = get_fx_rate(args["pair"])
+                st.markdown(
+                    f"**{fx['pair']}** {fx['rate']:.4f} ({fx['changePct']:+.2f}%)"
+                )
+                tool_content = json.dumps(fx)
 
             # ---------- price history ------------------------------------- #
             elif name == "get_stock_history":

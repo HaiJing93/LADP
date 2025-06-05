@@ -117,6 +117,21 @@ HISTORY_TOOL_SCHEMA = {
     },
 }
 
+FX_RATE_TOOL_SCHEMA = {
+    "name": "get_fx_rate",
+    "description": "Return the latest FX spot rate for a currency pair like 'USD/SGD'.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "pair": {
+                "type": "string",
+                "description": "Currency pair, e.g. 'USD/SGD'.",
+            }
+        },
+        "required": ["pair"],
+    },
+}
+
 DRAWDOWN_TOOL_SCHEMA = {
     "name": "calculate_max_drawdown",
     "description": (
@@ -143,5 +158,6 @@ TOOLS = [
     {"type": "function", "function": YEARLY_TOOL_SCHEMA},
     {"type": "function", "function": QUOTE_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": HISTORY_TOOL_SCHEMA},
+    {"type": "function", "function": FX_RATE_TOOL_SCHEMA},
     {"type": "function", "function": DRAWDOWN_TOOL_SCHEMA},  # ← NEW
 ]
