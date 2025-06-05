@@ -60,16 +60,18 @@ def _ensure_returns(
 
 
 def max_drawdown(series: Sequence[float | int], *, is_prices: bool = True) -> float:
-    """
-    Return the maximum peak-to-trough draw-down as a **negative decimal**.
+    """Return the maximum peak-to-trough draw-down as a **negative decimal**.
 
     If *is_prices* is False, the numbers are interpreted as arithmetic returns
     and converted to an equity curve before the draw-down calculation.
     """
-    if not series:
+    if series is None:
         return float("nan")
 
     prices = np.asarray(series, dtype="float64")
+
+    if prices.size == 0:
+        return float("nan")
 
     if not is_prices:
         prices = np.cumprod(1.0 + prices)  # build price curve from returns
