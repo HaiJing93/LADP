@@ -12,6 +12,7 @@ import streamlit as st
 from config.settings import settings
 from features.pdfs.indexer import index_pdfs
 from features.llm.chat import ask_llm
+from openai import OpenAIError
 from features.analytics.charts import draw_pie
 from features.analytics.portfolio import (
     compute_portfolio_metrics,
@@ -111,12 +112,24 @@ if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     # ---------------- first LLM call -------------------------------------- #
-    response = ask_llm(
-        st.session_state.messages,
-        st.session_state.get("vectorstore"),
-        user_input,
-        top_k=st.session_state.get("top_k", 8),
-    )
+    try:
+        response = ask_llm(
+            st.session_state.messages,
+            st.session_state.get("vectorstore"),
+            user_input,
+            top_k=st.session_state.get("top_k", 8),
+        )
+    except OpenAIError as exc:
+        st.error(f"LLM request failed: {exc}")
+        st.stop()
+    except Exception as exc:
+        st.error(f"Unexpected error: {exc}")
+        st.stop()
+
+    if not response or not getattr(response, "choices", None):
+        st.error("No response from LLM.")
+        st.stop()
+
     choice = response.choices[0]
     tool_messages: list[dict[str, str]] = []
 
