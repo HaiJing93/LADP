@@ -66,4 +66,3 @@ def get_fund_series(excel_data: dict[str, pd.DataFrame], sheet: str, fund_name: 
         return col.tolist()
 
     return None
-    return result
