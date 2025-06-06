@@ -24,7 +24,7 @@ from features.marketdata.yahoo import (
     get_stock_history,
     get_fx_rate,
 )
-from features.excel.loader import load_excel
+from features.excel.loader import load_excel, get_fund_series
 
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
@@ -72,7 +72,7 @@ with st.sidebar:
                 st.info("These PDFs were already indexed – nothing new added.")
         else:
             st.error("No readable text found in the uploaded PDFs.")
-
+     
     st.header("📊 Excel Data")
     excel_file = st.file_uploader(
         "Upload Excel",
@@ -262,6 +262,24 @@ if user_input:
                         tool_content = f"Sheet '{sheet}' not found."
                     else:
                         tool_content = df.head(rows).to_json(orient="records")
+
+            # ---------- fund series from excel ----------------------------- #
+            elif name == "get_fund_series":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available."
+                else:
+                    sheet = args.get("sheet")
+                    fund_name = args.get("fund_name")
+                    try:
+                        series = get_fund_series(excel_data, sheet, fund_name)
+                    except Exception as exc:
+                        series = None
+                        print("FUND SERIES ERROR:", exc)
+                    if series is None:
+                        tool_content = f"Fund '{fund_name}' not found in sheet '{sheet}'."
+                    else:
+                        tool_content = json.dumps(series)
 
             # ---------- fallback ------------------------------------------ #
             else:
