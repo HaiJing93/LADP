@@ -43,9 +43,30 @@ _EXCEL_TOOL_SCHEMA = {
     },
 }
 
+# New tool to fetch a full column by fund name
+_FUND_SERIES_SCHEMA = {
+    "name": "get_fund_series",
+    "description": (
+        "Return numeric values from the column in the specified Excel sheet "
+        "whose first-row value or column header matches the provided fund name."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {
+                "type": "string",
+                "description": "Exact sheet name (case-sensitive).",
+            },
+            "fund_name": {"type": "string", "description": "Fund name"},
+        },
+        "required": ["sheet", "fund_name"],
+    },
+}
+
 # Wrap just like all the other tools
 TOOLS = _BASE_TOOLS + [
-    {"type": "function", "function": _EXCEL_TOOL_SCHEMA}
+    {"type": "function", "function": _EXCEL_TOOL_SCHEMA},
+    {"type": "function", "function": _FUND_SERIES_SCHEMA},
 ]
 
 # --------------------------------------------------------------------------- #
