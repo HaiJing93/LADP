@@ -33,5 +33,37 @@ def load_excel(file):
                 df[col] = df[col].dt.strftime("%d/%m/%y")
 
         result[sheet] = df
+    
+    return result
 
+
+def get_fund_series(excel_data: dict[str, pd.DataFrame], sheet: str, fund_name: str) -> list[float] | None:
+    """Return numeric values from the column matching *fund_name*.
+
+    The search first checks column headers case-insensitively. If no match is
+    found, the first row is scanned for the fund name and the values beneath it
+    are returned. Non-numeric values are ignored.
+    """
+    df = excel_data.get(sheet)
+    if df is None or df.empty:
+        return None
+
+    fund_lower = fund_name.strip().lower()
+
+    # 1) match against column labels
+    cols_lower = [str(c).strip().lower() for c in df.columns]
+    if fund_lower in cols_lower:
+        col = df.iloc[:, cols_lower.index(fund_lower)]
+        series = pd.to_numeric(col, errors="coerce").dropna()
+        return series.tolist()
+
+    # 2) match against first-row values
+    first_row = df.iloc[0].astype(str).str.strip().str.lower()
+    matches = first_row[first_row == fund_lower]
+    if not matches.empty:
+        idx = matches.index[0]
+        col = pd.to_numeric(df.loc[1:, idx], errors="coerce").dropna()
+        return col.tolist()
+
+    return None
     return result
