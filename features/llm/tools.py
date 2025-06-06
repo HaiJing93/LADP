@@ -169,6 +169,25 @@ EXCEL_TOOL_SCHEMA = {
     },
 }
 
+# ------------------------------------------------------------------- #
+#  Python execution schema                                          #
+# ------------------------------------------------------------------- #
+
+PYTHON_TOOL_SCHEMA = {
+    "name": "execute_python_code",
+    "description": (
+        "Execute arbitrary Python code and return any printed output or the"
+        " result. Use this for calculations that require Python."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "code": {"type": "string", "description": "Python code to execute."},
+        },
+        "required": ["code"],
+    },
+}
+
 
 # ------------------------------------------------------------------- #
 #  Master list passed to OpenAI                                       #
@@ -182,5 +201,6 @@ TOOLS = [
     {"type": "function", "function": FX_RATE_TOOL_SCHEMA},
     {"type": "function", "function": DRAWDOWN_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": EXCEL_TOOL_SCHEMA},      # ← NEW
+    {"type": "function", "function": PYTHON_TOOL_SCHEMA},
     ]
 

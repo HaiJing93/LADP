@@ -26,6 +26,7 @@ from features.marketdata.yahoo import (
     get_fx_rate,
 )
 from features.excel.loader import load_excel, get_fund_series
+from features.python.executor import execute_python_code
 
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
@@ -293,6 +294,13 @@ if user_input:
                         tool_content = f"Fund '{fund_name}' not found in sheet '{sheet}'."
                     else:
                         tool_content = json.dumps(series)
+
+            # ---------- execute python code ------------------------------- #
+            elif name == "execute_python_code":
+                output = execute_python_code(args["code"])
+                if output:
+                    st.code(output)
+                tool_content = output or ""
 
             # ---------- fallback ------------------------------------------ #
             else:
