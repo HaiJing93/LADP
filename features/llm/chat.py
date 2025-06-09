@@ -1,10 +1,9 @@
+# features/llm/chat.py
 """
 Wrapper around Azure OpenAI chat completion with optional RAG context.
 
-v2.8.1
-• Fix: Excel tool now wrapped the same way as other tools, avoiding KeyError.
-• Fix: debug print accesses name via ["function"]["name"].
-• Keeps PDF-chunk prefixing and the Excel-tool prompt hint.
+v2.8.4
+• Added Debugging from Johnny
 """
 from __future__ import annotations
 
@@ -15,59 +14,7 @@ from openai import AzureOpenAI, OpenAIError
 
 from config.settings import settings
 from .prompts import build_system_prompt
-from .tools import TOOLS as _BASE_TOOLS  # ← existing master list
-
-# --------------------------------------------------------------------------- #
-# Excel-specific tool schema                                                  #
-# --------------------------------------------------------------------------- #
-_EXCEL_TOOL_SCHEMA = {
-    "name": "get_excel_data",
-    "description": (
-        "Return a JSON preview of a sheet from the user-uploaded Excel "
-        "workbook. Call this whenever the user asks about spreadsheet data."
-    ),
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "sheet": {
-                "type": "string",
-                "description": "Exact sheet name (case-sensitive)."
-            },
-            "rows": {
-                "type": "integer",
-                "description": "How many rows to return (default 5).",
-                "default": 5
-            },
-        },
-        "required": ["sheet"],
-    },
-}
-
-# New tool to fetch a full column by fund name
-_FUND_SERIES_SCHEMA = {
-    "name": "get_fund_series",
-    "description": (
-        "Return numeric values from the column in the specified Excel sheet "
-        "whose first-row value or column header matches the provided fund name."
-    ),
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "sheet": {
-                "type": "string",
-                "description": "Exact sheet name (case-sensitive).",
-            },
-            "fund_name": {"type": "string", "description": "Fund name"},
-        },
-        "required": ["sheet", "fund_name"],
-    },
-}
-
-# Wrap just like all the other tools
-TOOLS = _BASE_TOOLS + [
-    {"type": "function", "function": _EXCEL_TOOL_SCHEMA},
-    {"type": "function", "function": _FUND_SERIES_SCHEMA},
-]
+from .tools import TOOLS
 
 # --------------------------------------------------------------------------- #
 # Azure OpenAI client (singleton)                                             #
@@ -128,10 +75,13 @@ def ask_llm(
         if ctx:
             sys_prompt = build_system_prompt(ctx)
 
-    # Tell the model explicitly when to call the Excel tool
+    # Tell the model explicitly when to call the Excel tools
     sys_prompt += (
         "\n\nIf the user requests data that lives in the uploaded Excel "
-        "workbook, call the `get_excel_data` function."
+        "workbook, call the `get_excel_data` or `get_fund_series` functions as appropriate. "
+        "If you receive an error about sheet names, immediately retry with one of the "
+        "available sheet names mentioned in the error message. Do not give up after "
+        "the first error - always attempt to use the correct sheet names."
     )
 
     messages_openai = [{"role": "system", "content": sys_prompt}] + messages
@@ -160,4 +110,4 @@ def ask_llm(
                 print("AZURE API BODY   :", resp.json())
             except Exception:
                 print("AZURE API BODY (raw):", resp.text)
-        raise
+        raise 
