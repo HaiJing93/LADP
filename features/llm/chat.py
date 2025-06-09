@@ -64,6 +64,7 @@ def ask_llm(
     user_input: str = "",
     *,
     top_k: int = 6,
+    enable_tools: bool = True,
 ):
     """Call Azure ChatGPT, adding RAG context + tool list."""
     sys_prompt = build_system_prompt()
@@ -94,12 +95,24 @@ def ask_llm(
     # ----------------------------------------------------------------------- #
 
     try:
-        return client.chat.completions.create(
-            model=settings.CHAT_DEPLOYMENT,
-            messages=messages_openai,
-            tools=TOOLS,
-            tool_choice="auto",
-        )
+        # return client.chat.completions.create(
+        #     model=settings.CHAT_DEPLOYMENT,
+        #     messages=messages_openai,
+        #     tools=TOOLS,
+        #     tool_choice="auto",
+        # )
+        if enable_tools:
+            return client.chat.completions.create(
+                model=settings.CHAT_DEPLOYMENT,
+                messages=messages_openai,
+                tools=TOOLS,
+                tool_choice="auto",
+            )
+        else:
+            return client.chat.completions.create(
+                model=settings.CHAT_DEPLOYMENT,
+                messages=messages_openai,
+            )
 
     except OpenAIError as err:
         # Dump HTTP error details for diagnosis

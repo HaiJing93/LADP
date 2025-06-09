@@ -446,6 +446,7 @@ if user_input:
             None,
             "",
             top_k=0,
+            enable_tools=False,
         )
         assistant_reply = follow_resp.choices[0].message.content or ""
         
