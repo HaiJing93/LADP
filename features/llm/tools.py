@@ -177,7 +177,8 @@ PYTHON_TOOL_SCHEMA = {
     "name": "execute_python_code",
     "description": (
         "Execute arbitrary Python code and return any printed output or the"
-        " result. Use this for calculations that require Python."
+        " result. Use this for calculations that require Python. The runtime"
+        " has pandas available as 'pd' along with 'json' and 'math'."
     ),
     "parameters": {
         "type": "object",
