@@ -22,7 +22,6 @@ faiss-cpu             # comment-out if you migrate to Chroma below
 
 # --- PDF parsing -----------------------------------------------------------
 PyPDF2==3.0.1         # swap to pypdf==3.17.0 if preferred but remove PyPDF2
-pdfplumber>=0.11
 # pypdf==3.17.0
 
 # --- Tokeniser -------------------------------------------------------------
