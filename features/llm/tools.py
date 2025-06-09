@@ -169,6 +169,58 @@ EXCEL_TOOL_SCHEMA = {
     },
 }
 
+FUND_SERIES_TOOL_SCHEMA = {
+    "name": "get_fund_series",
+    "description": (
+        "Return numeric values from the column in the specified Excel sheet "
+        "whose first-row value or column header matches the provided fund name."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {
+                "type": "string",
+                "description": "Exact sheet name (case-sensitive).",
+            },
+            "fund_name": {"type": "string", "description": "Fund name"},
+        },
+        "required": ["sheet", "fund_name"],
+    },
+}
+
+FUND_METRICS_TOOL_SCHEMA = {
+    "name": "calculate_fund_metrics",
+    "description": (
+        "Find a fund in the Excel sheet and calculate its portfolio metrics "
+        "(annualized return, volatility, drawdown) in one step. This combines "
+        "fund lookup and metrics calculation for efficiency."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "fund_name": {
+                "type": "string", 
+                "description": "Name of the fund to analyze"
+            },
+            "sheet": {
+                "type": "string", 
+                "description": "Excel sheet name (optional - will try main sheets if not specified)",
+                "default": "Main Funds"
+            },
+            "is_prices": {
+                "type": "boolean",
+                "description": "Whether the data represents prices (True) or returns (False)",
+                "default": False
+            },
+            "returns_are_percent": {
+                "type": "boolean", 
+                "description": "Whether return values are in percentage form",
+                "default": True
+            }
+        },
+        "required": ["fund_name"],
+    },
+}
 
 # ------------------------------------------------------------------- #
 #  Master list passed to OpenAI                                       #
@@ -182,5 +234,6 @@ TOOLS = [
     {"type": "function", "function": FX_RATE_TOOL_SCHEMA},
     {"type": "function", "function": DRAWDOWN_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": EXCEL_TOOL_SCHEMA},      # ← NEW
+    {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     ]
-
