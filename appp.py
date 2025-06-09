@@ -151,14 +151,38 @@ if user_input:
                     if len(args["series"]) <= 12
                     else 12 if len(args["series"]) <= 60 else 252
                 )
-                metrics = compute_portfolio_metrics(
-                    args["series"],
-                    is_prices=args.get("is_prices", True),
-                    periods_per_year=ppy,
-                    returns_are_percent=args.get("returns_are_percent"),
-                )
-                render_metrics_table(metrics)
-                tool_content = f"Portfolio metrics calculated (ppy={ppy})"
+                try:
+                    metrics = compute_portfolio_metrics(
+                        args["series"],
+                        is_prices=args.get("is_prices", True),
+                        periods_per_year=ppy,
+                        returns_are_percent=args.get("returns_are_percent"),
+                    ) 
+                    
+                    # Check if any metrics could be calculated
+                    valid_metrics = {k: v for k, v in metrics.items() if not pd.isna(v)}
+                    
+                    if not valid_metrics:
+                        tool_content = "Unable to calculate portfolio metrics. The provided data may be insufficient (empty series, all NaN values, or only one data point). Please check that you have provided a valid time series of prices or returns."
+                        st.warning("Portfolio metrics could not be calculated from the provided data.")
+                    else:
+                        render_metrics_table(metrics)
+                        # Include the actual metrics in the tool response
+                        metrics_summary = []
+                        for key, value in metrics.items():
+                            if pd.isna(value):
+                                metrics_summary.append(f"{key}: Unable to calculate")
+                            else:
+                                if key in ["cumulative_return", "annualized_return", "annualized_volatility", "max_drawdown"]:
+                                    metrics_summary.append(f"{key}: {value*100:.2f}%")
+                                else:
+                                    metrics_summary.append(f"{key}: {value:.4f}")
+                        
+                        tool_content = f"Portfolio metrics calculated (ppy={ppy}). Results: {'; '.join(metrics_summary)}"
+                        
+                except Exception as exc:
+                    tool_content = f"Error calculating portfolio metrics: {exc}. Please ensure the data is a valid numeric series."
+                    st.error(f"Error calculating portfolio metrics: {exc}")
 
             # ---------- yearly perf --------------------------------------- #
             elif name == "calculate_yearly_performance":
@@ -240,29 +264,44 @@ if user_input:
 
                 # fallback 2 – fetch via ticker if provided
                 if not series_vals and args.get("ticker"):
-                    series_vals = [
-                        p
-                        for _, p in get_stock_history(
-                            args["ticker"],
-                            period=args.get("period", "1y"),
-                            interval=args.get("interval", "1d"),
-                        )
-                    ]
+                    try:
+                        series_vals = [
+                            p
+                            for _, p in get_stock_history(
+                                args["ticker"],
+                                period=args.get("period", "1y"),
+                                interval=args.get("interval", "1d"),
+                            )
+                        ]
+                    except Exception as exc:
+                        st.error(f"Failed to fetch stock history for {args.get('ticker')}: {exc}")
 
                 if len(series_vals) <= 1:
                     st.warning(
                         "No price series available to compute draw-down."
                     )
                     dd = float("nan")
+                    tool_content = f"Unable to calculate maximum drawdown: insufficient data (only {len(series_vals)} data point(s) available). Need at least 2 data points for drawdown calculation."
                 else:
-                    dd = max_drawdown(
-                        series_vals, is_prices=args.get("is_prices", True)
-                    )
-                    st.markdown(f"**Maximum draw-down:** {dd*100:.2f}%")
+                    try:
+                        dd = max_drawdown(
+                            series_vals, is_prices=args.get("is_prices", True)
+                        )
+                        if pd.isna(dd):
+                            st.warning("Maximum drawdown calculation returned NaN.")
+                            tool_content = "Maximum drawdown could not be calculated (result was NaN). This may indicate invalid data in the price series."
+                        else:
+                            st.markdown(f"**Maximum draw-down:** {dd*100:.2f}%")
+                            tool_content = f"Maximum drawdown calculated: {dd*100:.2f}% (based on {len(series_vals)} data points)"
+                    except Exception as exc:
+                        dd = float("nan")
+                        tool_content = f"Error calculating maximum drawdown: {exc}"
+                        st.error(f"Error in drawdown calculation: {exc}")
 
-                tool_content = json.dumps({"max_drawdown": dd})
+                # Include the numeric result for further processing
+                tool_content += f" | JSON: {json.dumps({'max_drawdown': dd})}"
 
-                # ---------- excel data --------------------------------------- #
+            # ---------- excel data --------------------------------------- #
             elif name == "get_excel_data":
                 excel_data = st.session_state.get("excel_data")
                 if not excel_data:
@@ -280,19 +319,102 @@ if user_input:
             elif name == "get_fund_series":
                 excel_data = st.session_state.get("excel_data")
                 if not excel_data:
-                    tool_content = "No Excel data available."
+                    tool_content = "No Excel data available. Please upload an Excel file first."
                 else:
                     sheet = args.get("sheet")
                     fund_name = args.get("fund_name")
-                    try:
-                        series = get_fund_series(excel_data, sheet, fund_name)
-                    except Exception as exc:
-                        series = None
-                        print("FUND SERIES ERROR:", exc)
-                    if series is None:
-                        tool_content = f"Fund '{fund_name}' not found in sheet '{sheet}'."
+                    
+                    # Check if sheet exists
+                    if sheet not in excel_data:
+                        available_sheets = list(excel_data.keys())
+                        tool_content = f"Sheet '{sheet}' not found. Available sheets: {', '.join(available_sheets)}"
                     else:
-                        tool_content = json.dumps(series)
+                        try:
+                            series = get_fund_series(excel_data, sheet, fund_name)
+                            if series is None:
+                                # Provide more helpful information about what was searched
+                                df = excel_data[sheet]
+                                col_names = [str(c) for c in df.columns]
+                                first_row_values = df.iloc[0].astype(str).tolist() if not df.empty else []
+                                
+                                search_info = f"Searched in column headers: {col_names[:10]}{'...' if len(col_names) > 10 else ''}"
+                                if first_row_values:
+                                    search_info += f" and first row values: {first_row_values[:10]}{'...' if len(first_row_values) > 10 else ''}"
+                                
+                                tool_content = f"Fund '{fund_name}' not found in sheet '{sheet}'. {search_info}. Please check the exact fund name spelling or try a different sheet."
+                            else:
+                                tool_content = json.dumps(series)
+                                # Also provide summary info
+                                if len(series) > 0:
+                                    tool_content += f" (Found {len(series)} data points for fund '{fund_name}')"
+                                else:
+                                    tool_content = f"Fund '{fund_name}' column found but contains no valid numeric data."
+                        except Exception as exc:
+                            tool_content = f"Error retrieving fund series for '{fund_name}': {exc}"
+                            st.error(f"Error retrieving fund data: {exc}")
+
+            # ---------- combined fund metrics ----------------------------- #
+            elif name == "calculate_fund_metrics":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available. Please upload an Excel file first."
+                else:
+                    fund_name = args.get("fund_name")
+                    sheet = args.get("sheet", "Main Funds")
+                    is_prices = args.get("is_prices", False)
+                    returns_are_percent = args.get("returns_are_percent", True)
+                    
+                    # Try multiple sheet names if the specified one doesn't exist
+                    sheets_to_try = [sheet] if sheet in excel_data else []
+                    if not sheets_to_try:
+                        # Add common sheet names to try
+                        for common_sheet in ["Main Funds", "Sheet1", "Fund Data", excel_data.keys()]:
+                            if isinstance(common_sheet, str) and common_sheet in excel_data:
+                                sheets_to_try.append(common_sheet)
+                            elif hasattr(common_sheet, '__iter__'):
+                                sheets_to_try.extend(list(common_sheet))
+                        sheets_to_try = list(dict.fromkeys(sheets_to_try))  # Remove duplicates
+                    
+                    fund_found = False
+                    for sheet_name in sheets_to_try:
+                        try:
+                            series = get_fund_series(excel_data, sheet_name, fund_name)
+                            if series is not None and len(series) > 1:
+                                # Calculate metrics
+                                metrics = compute_portfolio_metrics(
+                                    series,
+                                    is_prices=is_prices,
+                                    periods_per_year=12,  # Monthly data assumed
+                                    returns_are_percent=returns_are_percent,
+                                )
+                                
+                                # Check if metrics were calculated successfully
+                                valid_metrics = {k: v for k, v in metrics.items() if not pd.isna(v)}
+                                
+                                if valid_metrics:
+                                    # Render the table
+                                    render_metrics_table(metrics)
+                                    
+                                    # Create detailed response
+                                    metrics_text = []
+                                    for key, value in metrics.items():
+                                        if not pd.isna(value):
+                                            if key in ["cumulative_return", "annualized_return", "annualized_volatility", "max_drawdown"]:
+                                                metrics_text.append(f"{key.replace('_', ' ').title()}: {value*100:.2f}%")
+                                            else:
+                                                metrics_text.append(f"{key.replace('_', ' ').title()}: {value:.4f}")
+                                    
+                                    tool_content = f"Successfully calculated metrics for '{fund_name}' from sheet '{sheet_name}' (using {len(series)} data points). {'; '.join(metrics_text)}"
+                                    fund_found = True
+                                    break
+                                else:
+                                    continue  # Try next sheet
+                        except Exception as exc:
+                            continue  # Try next sheet
+                    
+                    if not fund_found:
+                        available_sheets = list(excel_data.keys())
+                        tool_content = f"Fund '{fund_name}' not found in any available sheets: {', '.join(available_sheets)}. Please check the fund name spelling or upload the correct Excel file."
 
             # ---------- fallback ------------------------------------------ #
             else:
@@ -311,6 +433,14 @@ if user_input:
         assistant_call_msg = choice.message.model_dump(exclude_none=True)
         assistant_call_msg["content"] = assistant_call_msg.get("content") or ""
 
+        # ---------- DEBUG: Print tool messages before second call -------- #
+        print("=== TOOL CALL DEBUG ===")
+        for i, tool_msg in enumerate(tool_messages):
+            print(f"Tool {i+1}: {tool_msg['name']}")
+            print(f"Content: {tool_msg['content'][:200]}{'...' if len(tool_msg['content']) > 200 else ''}")
+            print("---")
+        print("=== END TOOL DEBUG ===")
+
         follow_resp = ask_llm(
             st.session_state.messages + [assistant_call_msg] + tool_messages,
             None,
@@ -318,6 +448,12 @@ if user_input:
             top_k=0,
         )
         assistant_reply = follow_resp.choices[0].message.content or ""
+        
+        # ---------- DEBUG: Print final response ----------------------- #
+        print(f"=== FINAL LLM RESPONSE DEBUG ===")
+        print(f"Response length: {len(assistant_reply)}")
+        print(f"Response content: '{assistant_reply[:500]}{'...' if len(assistant_reply) > 500 else ''}'")
+        print("=== END RESPONSE DEBUG ===")
     else:
         assistant_reply = choice.message.content or ""
 
