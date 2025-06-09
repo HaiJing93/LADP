@@ -93,7 +93,6 @@ HISTORY_TOOL_SCHEMA = {
                     "ytd",
                     "max",
                 ],
-                "default": "1y",
                 "default": "1y"
             },
             "interval": {
