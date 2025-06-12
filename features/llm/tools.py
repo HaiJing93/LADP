@@ -27,8 +27,9 @@ PORTFOLIO_TOOL_SCHEMA = {
         "type": "object",
         "properties": {
             "series": {"type": "array", "items": {"type": "number"}},
+            "dates": {"type": "array", "items": {"type": "string"}},
             "is_prices": {"type": "boolean", "default": True},
-            "periods_per_year": {"type": "integer", "default": 252},
+            "periods_per_year": {"type": "integer"},
             "risk_free_rate": {"type": "number", "default": 0.0},
             "returns_are_percent": {"type": "boolean", "default": False},
         },
@@ -221,6 +222,24 @@ FUND_METRICS_TOOL_SCHEMA = {
     },
 }
 
+PORTFOLIO_EXCEL_TOOL_SCHEMA = {
+    "name": "calculate_portfolio_metrics_from_excel",
+    "description": (
+        "Calculate portfolio metrics from the first two columns of an uploaded Excel sheet. "
+        "The first column must contain dates."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {"type": "string"},
+            "is_prices": {"type": "boolean", "default": True},
+            "periods_per_year": {"type": "integer"},
+            "returns_are_percent": {"type": "boolean", "default": False},
+        },
+        "required": ["sheet"],
+    },
+}
+
 # ------------------------------------------------------------------- #
 #  Master list passed to OpenAI                                       #
 # ------------------------------------------------------------------- #
@@ -235,4 +254,5 @@ TOOLS = [
     {"type": "function", "function": EXCEL_TOOL_SCHEMA},      # ← NEW
     {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
     ]
