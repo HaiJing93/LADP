@@ -2,8 +2,9 @@
 """
 Wrapper around Azure OpenAI chat completion with optional RAG context.
 
-v2.8.4
-• Added Debugging from Johnny
+v2.9 
+• Fix: Fixed bug where appp.py doesn't work
+• Use only consolidated tools from tools.py
 """
 from __future__ import annotations
 
@@ -93,7 +94,6 @@ def ask_llm(
     print("MESSAGE COUNT        :", len(messages_openai))
     print("JSON BYTES (approx)  :", _json_bytes_safe(messages_openai))
     # ----------------------------------------------------------------------- #
-
     try:
         # return client.chat.completions.create(
         #     model=settings.CHAT_DEPLOYMENT,
@@ -113,7 +113,7 @@ def ask_llm(
                 model=settings.CHAT_DEPLOYMENT,
                 messages=messages_openai,
             )
-
+        
     except OpenAIError as err:
         # Dump HTTP error details for diagnosis
         resp = getattr(err, "response", None)
