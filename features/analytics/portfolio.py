@@ -18,6 +18,7 @@ import streamlit as st
 
 __all__ = [
     "compute_portfolio_metrics",
+    "compute_portfolio_metrics_from_excel",
     "render_metrics_table",
     "yearly_performance",
     "max_drawdown",
@@ -50,7 +51,7 @@ def _ensure_returns(
 
     if returns_are_percent:
         returns = returns / 100.0
-
+    print("printing out _ensure_returns: ", returns)
     return returns.dropna()
 
 
@@ -59,7 +60,11 @@ def _ensure_returns(
 # --------------------------------------------------------------------------- #
 
 
-def max_drawdown(series: Sequence[float | int], *, is_prices: bool = True) -> float:
+def max_drawdown(
+    series: Sequence[float | int],
+    *,
+    is_prices: bool = True,
+) -> float:
     """Return the maximum peak-to-trough draw-down as a **negative decimal**.
 
     If *is_prices* is False, the numbers are interpreted as arithmetic returns
@@ -70,11 +75,9 @@ def max_drawdown(series: Sequence[float | int], *, is_prices: bool = True) -> fl
 
     prices = np.asarray(series, dtype="float64")
 
-    if prices.size == 0:
-        return float("nan")
-
     if not is_prices:
-        prices = np.cumprod(1.0 + prices)  # build price curve from returns
+        # Build a price curve from return series
+        prices = np.cumprod(1.0 + prices)
 
     peaks = np.maximum.accumulate(prices)
     drawdowns = (prices - peaks) / peaks
@@ -100,17 +103,45 @@ def compute_portfolio_metrics(
     series: Iterable[float | int],
     *,
     is_prices: bool = True,
-    periods_per_year: int = 12,
+    periods_per_year: int | None = None,
     risk_free_rate: float = 0.0,  # placeholder, unused
     returns_are_percent: bool | None = False,
+    dates: Sequence[str | pd.Timestamp] | None = None,
 ) -> Mapping[str, float]:
-    """Return cumulative, annualised return and annualised volatility."""
+    """Return cumulative, annualised return and annualised volatility.
+
+    If ``periods_per_year`` is ``None`` and ``dates`` are supplied, the function
+    will attempt to infer the sampling frequency by examining the median spacing
+    between consecutive dates. Common frequencies are mapped to 1 (yearly), 12
+    (monthly) and 252 (daily). When neither ``periods_per_year`` nor ``dates``
+    are provided, the length based heuristic from the original implementation is
+    used.
+    """
 
     returns_series = _ensure_returns(
         series,
         is_prices=is_prices,
         returns_are_percent=bool(returns_are_percent),
     )
+
+    if periods_per_year is None:
+        if dates is not None:
+            ds = pd.to_datetime(list(dates), errors="coerce")
+            ds = ds.dropna()
+            if len(ds) > 1:
+                med_delta = ds.sort_values().diff().median()
+                if pd.notna(med_delta):
+                    days = med_delta / pd.Timedelta(days=1)
+                    if 350 <= days <= 370:
+                        periods_per_year = 1
+                    elif 27 <= days <= 31:
+                        periods_per_year = 12
+                    elif 0.5 <= days <= 1.5:
+                        periods_per_year = 252
+
+        if periods_per_year is None:
+            n = len(returns_series)
+            periods_per_year = 1 if n <= 12 else 12 if n <= 60 else 252
 
     if returns_series.empty:
         return {
@@ -142,6 +173,34 @@ def compute_portfolio_metrics(
     }
 
 
+def compute_portfolio_metrics_from_excel(
+    file: str | bytes,
+    *,
+    sheet: str | int | None = 0,
+    is_prices: bool = True,
+    periods_per_year: int | None = None,
+    risk_free_rate: float = 0.0,
+    returns_are_percent: bool | None = False,
+) -> Mapping[str, float]:
+    """Read an Excel sheet (first column dates, second values) and compute metrics."""
+    df = pd.read_excel(file, sheet_name=sheet)
+    if df.shape[1] < 2:
+        raise ValueError("Excel sheet must have at least two columns")
+
+    dates = pd.to_datetime(df.iloc[:, 0], errors="coerce")
+    values = pd.to_numeric(df.iloc[:, 1], errors="coerce")
+    mask = dates.notna() & values.notna()
+    dates = dates.loc[mask]
+    values = values.loc[mask]
+
+    return compute_portfolio_metrics(
+        values.tolist(),
+        is_prices=is_prices,
+        periods_per_year=periods_per_year,
+        risk_free_rate=risk_free_rate,
+        returns_are_percent=returns_are_percent,
+        dates=dates.tolist(),
+    )
 # --------------------------------------------------------------------------- #
 # Streamlit helper                                                            #
 # --------------------------------------------------------------------------- #
