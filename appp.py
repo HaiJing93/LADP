@@ -16,6 +16,7 @@ from openai import OpenAIError
 from features.analytics.charts import draw_pie
 from features.analytics.portfolio import (
     compute_portfolio_metrics,
+    compute_portfolio_metrics_from_excel,
     render_metrics_table,
     yearly_performance,
     max_drawdown,
@@ -146,18 +147,14 @@ if user_input:
 
             # ---------- portfolio metrics --------------------------------- #
             elif name == "calculate_portfolio_metrics":
-                ppy = args.get("periods_per_year") or (
-                    1
-                    if len(args["series"]) <= 12
-                    else 12 if len(args["series"]) <= 60 else 252
-                )
                 try:
                     metrics = compute_portfolio_metrics(
                         args["series"],
                         is_prices=args.get("is_prices", True),
-                        periods_per_year=ppy,
+                        periods_per_year=args.get("periods_per_year"),
                         returns_are_percent=args.get("returns_are_percent"),
-                    ) 
+                        dates=args.get("dates"),
+                    )
                     
                     # Check if any metrics could be calculated
                     valid_metrics = {k: v for k, v in metrics.items() if not pd.isna(v)}
@@ -178,11 +175,56 @@ if user_input:
                                 else:
                                     metrics_summary.append(f"{key}: {value:.4f}")
                         
-                        tool_content = f"Portfolio metrics calculated (ppy={ppy}). Results: {'; '.join(metrics_summary)}"
+                        tool_content = f"Portfolio metrics calculated. Results: {'; '.join(metrics_summary)}"
                         
                 except Exception as exc:
                     tool_content = f"Error calculating portfolio metrics: {exc}. Please ensure the data is a valid numeric series."
                     st.error(f"Error calculating portfolio metrics: {exc}")
+
+            # ---------- portfolio metrics from excel -------------------- #
+            elif name == "calculate_portfolio_metrics_from_excel":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available. Please upload an Excel file first."
+                else:
+                    sheet = args.get("sheet")
+                    if sheet not in excel_data:
+                        sheet = next(iter(excel_data))
+                    df = excel_data[sheet]
+                    is_prices = args.get("is_prices", True)
+                    returns_are_percent = args.get("returns_are_percent", False)
+                    try:
+                        ppy = args.get("periods_per_year")
+                        dates = pd.to_datetime(df.iloc[:, 0], errors="coerce")
+                        values = pd.to_numeric(df.iloc[:, 1], errors="coerce")
+                        mask = dates.notna() & values.notna()
+                        metrics = compute_portfolio_metrics(
+                            values[mask].tolist(),
+                            is_prices=is_prices,
+                            periods_per_year=ppy,
+                            returns_are_percent=returns_are_percent,
+                            dates=dates[mask].tolist(),
+                        )
+
+                        valid_metrics = {k: v for k, v in metrics.items() if not pd.isna(v)}
+                        if not valid_metrics:
+                            tool_content = "Unable to calculate portfolio metrics from Excel data."
+                            st.warning("Portfolio metrics could not be calculated from the Excel data.")
+                        else:
+                            render_metrics_table(metrics)
+                            metrics_summary = []
+                            for key, value in metrics.items():
+                                if pd.isna(value):
+                                    metrics_summary.append(f"{key}: Unable to calculate")
+                                else:
+                                    if key in ["cumulative_return", "annualized_return", "annualized_volatility", "max_drawdown"]:
+                                        metrics_summary.append(f"{key}: {value*100:.2f}%")
+                                    else:
+                                        metrics_summary.append(f"{key}: {value:.4f}")
+                            tool_content = f"Portfolio metrics calculated from sheet '{sheet}'. Results: {'; '.join(metrics_summary)}"
+                    except Exception as exc:
+                        tool_content = f"Error calculating portfolio metrics from Excel: {exc}"
+                        st.error(tool_content)
 
             # ---------- yearly perf --------------------------------------- #
             elif name == "calculate_yearly_performance":
@@ -457,6 +499,11 @@ if user_input:
         print("=== END RESPONSE DEBUG ===")
     else:
         assistant_reply = choice.message.content or ""
+
+    st.chat_message("assistant").markdown(assistant_reply)
+    st.session_state.messages.append(
+        {"role": "assistant", "content": assistant_reply}
+    )
 
     st.chat_message("assistant").markdown(assistant_reply)
     st.session_state.messages.append(
