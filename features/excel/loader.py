@@ -48,13 +48,22 @@ def get_fund_series(excel_data: dict[str, pd.DataFrame], sheet: str, fund_name: 
     if df is None or df.empty:
         return None
 
+    def _clean_numeric(col: pd.Series) -> pd.Series:
+        """Return numeric values from *col* handling common symbols."""
+        cleaned = (
+            col.astype(str)
+            .str.replace(",", "", regex=False)
+            .str.replace("%", "", regex=False)
+        )
+        return pd.to_numeric(cleaned, errors="coerce").dropna()
+
     fund_lower = fund_name.strip().lower()
 
     # 1) match against column labels
     cols_lower = [str(c).strip().lower() for c in df.columns]
     if fund_lower in cols_lower:
         col = df.iloc[:, cols_lower.index(fund_lower)]
-        series = pd.to_numeric(col, errors="coerce").dropna()
+        series = _clean_numeric(col)
         return series.tolist()
 
     # 2) match against first-row values
@@ -62,7 +71,7 @@ def get_fund_series(excel_data: dict[str, pd.DataFrame], sheet: str, fund_name: 
     matches = first_row[first_row == fund_lower]
     if not matches.empty:
         idx = matches.index[0]
-        col = pd.to_numeric(df.loc[1:, idx], errors="coerce").dropna()
+        col = _clean_numeric(df.loc[1:, idx])
         return col.tolist()
 
     return None
