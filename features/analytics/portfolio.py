@@ -51,7 +51,6 @@ def _ensure_returns(
 
     if returns_are_percent:
         returns = returns / 100.0
-    print("printing out _ensure_returns: ", returns)
     return returns.dropna()
 
 
@@ -154,9 +153,8 @@ def compute_portfolio_metrics(
     cumulative_return = (1.0 + returns_series).prod() - 1.0
 
     n_periods = len(returns_series)
-    annualized_return = (1.0 + cumulative_return) ** (
-        periods_per_year / n_periods
-    ) - 1.0
+    geometric_mean = (1.0 + cumulative_return) ** (1.0 / n_periods) - 1.0
+    annualized_return = (1.0 + geometric_mean) ** periods_per_year - 1.0
 
     annualized_volatility = returns_series.std(ddof=0) * math.sqrt(periods_per_year)
 
@@ -177,12 +175,15 @@ def compute_portfolio_metrics_from_excel(
     file: str | bytes,
     *,
     sheet: str | int | None = 0,
-    is_prices: bool = True,
-    periods_per_year: int | None = None,
+    is_prices: bool = False,
+    periods_per_year: int | None = 12,
     risk_free_rate: float = 0.0,
     returns_are_percent: bool | None = False,
 ) -> Mapping[str, float]:
-    """Read an Excel sheet (first column dates, second values) and compute metrics."""
+    """Read an Excel sheet (first column dates, second values) and compute metrics.
+
+    By default the values are treated as **monthly returns in decimal form**.
+    """
     df = pd.read_excel(file, sheet_name=sheet)
     if df.shape[1] < 2:
         raise ValueError("Excel sheet must have at least two columns")
