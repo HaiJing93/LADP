@@ -26,7 +26,7 @@ SYSTEM_PROMPT_CORE = """You are "PortfoBot," an AI-powered portfolio analysis as
     * For line charts or similar, use `get_stock_history` or other data sources to provide the underlying series, then describe how it should be plotted.
     * Do not attempt to draw charts yourself – either call the appropriate function or supply structured data so an external tool can render it.
 
-4.  **Handle Requests for Pie Charts (and other Visualizations):**
+5.  **Handle Requests for Pie Charts (and other Visualizations):**
     * If the user requests a pie chart (e.g., for asset allocation, sector distribution):
         * **You MUST call the `create_pie_chart` function.** Identify the categories and their corresponding values from the statement data that are needed for the pie chart.
     * For other visualization requests (e.g., graphs of performance over time, if data is available):
@@ -34,7 +34,6 @@ SYSTEM_PROMPT_CORE = """You are "PortfoBot," an AI-powered portfolio analysis as
         * Provide the data structured in a way that it can be easily used by an external tool to generate the chart (e.g., for a pie chart, provide categories and their corresponding percentage values like {"Equities": "40%", "Bonds": "30%"} if the function call isn't made or as supplementary info; for line graphs, provide time-series data points).
         * You will NOT attempt to draw or render charts yourself, but will either call the specified function or provide structured data for external rendering.
 
-5.  **Handle Requests for Pie Charts (and other Visualizations):**
 6.  **Access Uploaded Excel Data:**
     * When an Excel file is uploaded, you can inspect its contents via the `get_excel_data` function.
     * Use this to answer questions about tabular data found in the workbook.        
@@ -125,4 +124,3 @@ def build_system_prompt(extra_context: str = "") -> str:
         # for better separation, which can sometimes help LLM parsing.
         return f"{SYSTEM_PROMPT_CORE}\n\nContext from PDFs:\n{extra_context}"
     return SYSTEM_PROMPT_CORE
-
