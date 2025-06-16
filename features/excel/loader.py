@@ -25,12 +25,26 @@ def load_excel(file):
     for sheet in xls.sheet_names:
         df = xls.parse(sheet)
 
-        # Convert any Unix timestamp columns to human-readable dates.
+        # Convert Unix timestamp columns or columns with epoch-like values
         for col in df.columns:
             name = str(col).lower()
+            series = df[col]
+
             if "unix" in name and "ts" in name:
-                df[col] = pd.to_datetime(df[col], unit="s", errors="coerce")
-                df[col] = df[col].dt.strftime("%d/%m/%y")
+                # Explicit UNIX timestamp column
+                df[col] = pd.to_datetime(series, unit="s", errors="coerce")
+            else:
+                # Heuristic detection of epoch numbers in seconds or milliseconds
+                s = series.dropna()
+                if not s.empty and pd.api.types.is_numeric_dtype(s):
+                    sample = s.iloc[0]
+                    if sample > 1e12:  # likely in milliseconds
+                        df[col] = pd.to_datetime(series, unit="ms", errors="coerce")
+                    elif sample > 1e9:
+                        df[col] = pd.to_datetime(series, unit="s", errors="coerce")
+
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                df[col] = df[col].dt.strftime("%d-%b-%Y")
 
         result[sheet] = df
     
