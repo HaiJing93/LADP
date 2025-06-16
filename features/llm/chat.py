@@ -2,8 +2,8 @@
 """
 Wrapper around Azure OpenAI chat completion with optional RAG context.
 
-v2.9 
-• Fix: Fixed bug where appp.py doesn't work
+v2.8.3
+• Fix: Completely removed duplicate tool definitions
 • Use only consolidated tools from tools.py
 """
 from __future__ import annotations
