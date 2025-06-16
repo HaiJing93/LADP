@@ -213,9 +213,9 @@ FUND_METRICS_TOOL_SCHEMA = {
                 "default": False
             },
             "returns_are_percent": {
-                "type": "boolean", 
+                "type": "boolean",
                 "description": "Whether return values are in percentage form",
-                "default": True
+                "default": False
             }
         },
         "required": ["fund_name"],

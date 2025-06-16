@@ -213,9 +213,9 @@ FUND_METRICS_TOOL_SCHEMA = {
                 "default": False
             },
             "returns_are_percent": {
-                "type": "boolean", 
+                "type": "boolean",
                 "description": "Whether return values are in percentage form",
-                "default": True
+                "default": False
             }
         },
         "required": ["fund_name"],
@@ -232,8 +232,8 @@ PORTFOLIO_EXCEL_TOOL_SCHEMA = {
         "type": "object",
         "properties": {
             "sheet": {"type": "string"},
-            "is_prices": {"type": "boolean", "default": True},
-            "periods_per_year": {"type": "integer"},
+            "is_prices": {"type": "boolean", "default": False},
+            "periods_per_year": {"type": "integer", "default": 12},
             "returns_are_percent": {"type": "boolean", "default": False},
         },
         "required": ["sheet"],

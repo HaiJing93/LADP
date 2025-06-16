@@ -362,7 +362,7 @@ if user_input:
                     fund_name = args.get("fund_name")
                     sheet = args.get("sheet", "Main Funds")
                     is_prices = args.get("is_prices", False)
-                    returns_are_percent = args.get("returns_are_percent", True)
+                    returns_are_percent = args.get("returns_are_percent", False)
                     
                     # Try multiple sheet names if the specified one doesn't exist
                     sheets_to_try = [sheet] if sheet in excel_data else []
