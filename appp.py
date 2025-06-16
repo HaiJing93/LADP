@@ -26,7 +26,11 @@ from features.marketdata.yahoo import (
     get_stock_history,
     get_fx_rate,
 )
-from features.excel.loader import load_excel, get_fund_series
+from features.excel.loader import (
+    load_excel,
+    get_fund_series,
+    get_fund_month_value,
+)
 
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
@@ -394,6 +398,33 @@ if user_input:
                         except Exception as exc:
                             tool_content = f"Error retrieving fund series for '{fund_name}': {exc}"
                             st.error(f"Error retrieving fund data: {exc}")
+
+            # ---------- fund value for specific month -------------------- #
+            elif name == "get_fund_month_value":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available. Please upload an Excel file first."
+                else:
+                    sheet = args.get("sheet")
+                    fund_name = args.get("fund_name")
+                    month = args.get("month")
+                    if sheet not in excel_data:
+                        available_sheets = list(excel_data.keys())
+                        tool_content = (
+                            f"Sheet '{sheet}' not found. Available sheets: {', '.join(available_sheets)}"
+                        )
+                    else:
+                        try:
+                            value = get_fund_month_value(excel_data, sheet, fund_name, month)
+                            if value is None:
+                                tool_content = (
+                                    f"Value for fund '{fund_name}' in '{month}' not found."
+                                )
+                            else:
+                                tool_content = json.dumps({"value": value})
+                        except Exception as exc:
+                            tool_content = f"Error retrieving fund value: {exc}"
+                            st.error(f"Error retrieving fund value: {exc}")
 
             # ---------- combined fund metrics ----------------------------- #
             elif name == "calculate_fund_metrics":

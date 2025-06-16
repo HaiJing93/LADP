@@ -89,3 +89,61 @@ def get_fund_series(excel_data: dict[str, pd.DataFrame], sheet: str, fund_name: 
         return col.tolist()
 
     return None
+
+
+def get_fund_month_value(
+    excel_data: dict[str, pd.DataFrame],
+    sheet: str,
+    fund_name: str,
+    month: str,
+) -> float | None:
+    """Return the numeric value for ``fund_name`` at the row matching ``month``.
+
+    The search matches ``fund_name`` against column headers (case-insensitive)
+    or the first-row values, just like :func:`get_fund_series`. ``month`` can be
+    any string recognised by :func:`pandas.to_datetime`, e.g. ``"Dec 2024"``.
+    """
+    df = excel_data.get(sheet)
+    if df is None or df.empty:
+        return None
+
+    fund_lower = fund_name.strip().lower()
+
+    # Find the column for the fund
+    col_idx = None
+    cols_lower = [str(c).strip().lower() for c in df.columns]
+    df_values = df
+    if fund_lower in cols_lower:
+        col_idx = cols_lower.index(fund_lower)
+    else:
+        first_row = df.iloc[0].astype(str).str.strip().str.lower()
+        matches = first_row[first_row == fund_lower]
+        if not matches.empty:
+            col_idx = matches.index[0]
+            df_values = df.iloc[1:]
+
+    if col_idx is None:
+        return None
+
+    # Find the row for the month
+    target = pd.to_datetime(month, errors="coerce")
+    date_col = pd.to_datetime(df_values.iloc[:, 0], errors="coerce")
+
+    if pd.isna(target):
+        mask = (
+            df_values.iloc[:, 0]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            == month.strip().lower()
+        )
+    else:
+        mask = (date_col.dt.month == target.month) & (date_col.dt.year == target.year)
+
+    if not mask.any():
+        return None
+
+    value = pd.to_numeric(df_values.loc[mask].iloc[0, col_idx], errors="coerce")
+    if pd.isna(value):
+        return None
+    return float(value)

@@ -188,6 +188,25 @@ FUND_SERIES_TOOL_SCHEMA = {
     },
 }
 
+FUND_MONTH_VALUE_TOOL_SCHEMA = {
+    "name": "get_fund_month_value",
+    "description": (
+        "Return the numeric value for a fund on a specific month in the given Excel sheet."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {"type": "string"},
+            "fund_name": {"type": "string"},
+            "month": {
+                "type": "string",
+                "description": "Month to retrieve, e.g. 'Dec 2024'",
+            },
+        },
+        "required": ["sheet", "fund_name", "month"],
+    },
+}
+
 FUND_METRICS_TOOL_SCHEMA = {
     "name": "calculate_fund_metrics",
     "description": (
@@ -253,6 +272,7 @@ TOOLS = [
     {"type": "function", "function": DRAWDOWN_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": EXCEL_TOOL_SCHEMA},      # ← NEW
     {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": FUND_MONTH_VALUE_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
     ]
