@@ -154,10 +154,9 @@ def compute_portfolio_metrics(
     cumulative_return = (1.0 + returns_series).prod() - 1.0
 
     n_periods = len(returns_series)
-    annualized_return = (1.0 + cumulative_return) ** (
-        periods_per_year / n_periods
-    ) - 1.0
-
+    geometric_mean = (1.0 + cumulative_return) ** (1.0 / n_periods) - 1.0
+    annualized_return = (1.0 + geometric_mean) ** periods_per_year - 1.0
+    
     annualized_volatility = returns_series.std(ddof=0) * math.sqrt(periods_per_year)
 
     if is_prices:
@@ -250,3 +249,4 @@ def yearly_performance(
 
     grouped = (1.0 + df["ret"]).groupby(df["date"].dt.year).prod() - 1.0
     return grouped.to_dict()
+
