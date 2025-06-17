@@ -80,8 +80,9 @@ def ask_llm(
     # Tell the model explicitly when to call the Excel tools
     sys_prompt += (
         "\n\nIf the user requests data that lives in the uploaded Excel "
-        "workbook, call the `get_excel_data`, `get_fund_series`, or "
-        "`get_fund_month_value` functions as appropriate. "
+        "workbook, call the `get_excel_data`, `get_fund_rankings`, "
+        "`get_fund_series`, or `get_fund_month_value` functions as appropriate. "
+        "`get_fund_rankings` can search all sheets if no sheet name is given. "
         "If you receive an error about sheet names, immediately retry with one of the "
         "available sheet names mentioned in the error message. Do not give up after "
         "the first error - always attempt to use the correct sheet names."
