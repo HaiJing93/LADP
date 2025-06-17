@@ -207,6 +207,24 @@ FUND_MONTH_VALUE_TOOL_SCHEMA = {
     },
 }
 
+
+FUND_RANKINGS_TOOL_SCHEMA = {
+    "name": "get_fund_rankings",
+    "description": (
+        "Search column B across the uploaded rankings workbook for a ticker "
+        "and return ranking values from columns R, V, Y, AB, AM, AO, AQ and AS. "
+        "An optional sheet name can be provided to narrow the search."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "ticker": {"type": "string"},
+            "sheet": {"type": "string"},
+        },
+        "required": ["ticker"],
+    },
+}
+
 FUND_METRICS_TOOL_SCHEMA = {
     "name": "calculate_fund_metrics",
     "description": (
@@ -273,6 +291,7 @@ TOOLS = [
     {"type": "function", "function": EXCEL_TOOL_SCHEMA},      # ← NEW
     {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_MONTH_VALUE_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": FUND_RANKINGS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
     ]
