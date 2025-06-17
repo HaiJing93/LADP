@@ -252,3 +252,4 @@ def yearly_performance(
     grouped = (1.0 + df["ret"]).groupby(df["date"].dt.year).prod() - 1.0
     return grouped.to_dict()
 
+
