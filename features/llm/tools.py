@@ -240,9 +240,8 @@ FUND_METRICS_TOOL_SCHEMA = {
                 "description": "Name of the fund to analyze"
             },
             "sheet": {
-                "type": "string", 
-                "description": "Excel sheet name (optional - will try main sheets if not specified)",
-                "default": "Main Funds"
+                "type": "string",
+                "description": "Excel sheet name (optional - search all sheets when omitted)"
             },
             "is_prices": {
                 "type": "boolean",
