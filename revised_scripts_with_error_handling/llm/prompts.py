@@ -47,7 +47,7 @@ SYSTEM_PROMPT_CORE = SYSTEM_PROMPT_CORE = """You are "PortfoBot," an AI-powered 
     * If the user request to find out a fund, search the top row of the excel data for the fund name.
     * If the fund is found, use all the inputs in the entire column and calculate portfolio metrics such as annualized returns,annualized volatility, and maximum drawdown using the `calculate_portfolio_metrics` or `calculate_max_drawdown` functions. 
     * When accessing Excel data, if you receive an error about sheet names not being found, ALWAYS retry using one of the available sheet names provided in the error message.
-    * Common sheet names include "Main Funds", "Sheet1", or other descriptive names. Use the actual available sheet names from the error message.
+    * Common sheet names like "Main Funds" or "Sheet1" are only examples. Always rely on the sheet names present in the workbook or listed in any error messages.
     * If a fund is not found in one sheet, try searching in other available sheets.
 
 **Input Format:**

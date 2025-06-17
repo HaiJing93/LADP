@@ -360,20 +360,20 @@ if user_input:
                     tool_content = "No Excel data available. Please upload an Excel file first."
                 else:
                     fund_name = args.get("fund_name")
-                    sheet = args.get("sheet", "Main Funds")
+                    sheet = args.get("sheet")
                     is_prices = args.get("is_prices", False)
                     returns_are_percent = args.get("returns_are_percent", False)
-                    
-                    # Try multiple sheet names if the specified one doesn't exist
-                    sheets_to_try = [sheet] if sheet in excel_data else []
-                    if not sheets_to_try:
-                        # Add common sheet names to try
-                        for common_sheet in ["Main Funds", "Sheet1", "Fund Data", excel_data.keys()]:
-                            if isinstance(common_sheet, str) and common_sheet in excel_data:
-                                sheets_to_try.append(common_sheet)
-                            elif hasattr(common_sheet, '__iter__'):
-                                sheets_to_try.extend(list(common_sheet))
-                        sheets_to_try = list(dict.fromkeys(sheets_to_try))  # Remove duplicates
+
+                    # Determine which sheets to search
+                    if sheet and sheet in excel_data:
+                        sheets_to_try = [sheet]
+                    else:
+                        sheets_to_try = list(excel_data.keys())
+                        if sheet and sheet not in excel_data:
+                            for common_sheet in ["Main Funds", "Sheet1", "Fund Data"]:
+                                if common_sheet in excel_data:
+                                    sheets_to_try.append(common_sheet)
+                        sheets_to_try = list(dict.fromkeys(sheets_to_try))
                     
                     fund_found = False
                     for sheet_name in sheets_to_try:
