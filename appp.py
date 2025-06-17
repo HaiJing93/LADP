@@ -382,7 +382,13 @@ if user_input:
                         tool_content = f"Sheet '{sheet}' not found."
                     else:
                         tool_content = df.head(rows).to_json(orient="records")
-
+            # ---------- list excel sheets ------------------------------ #
+            elif name == "list_excel_sheets":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available. Please upload an Excel file first."
+                else:
+                    tool_content = json.dumps({"sheets": list(excel_data.keys())})
             # ---------- fund series from excel ----------------------------- #
             elif name == "get_fund_series":
                 excel_data = st.session_state.get("excel_data")

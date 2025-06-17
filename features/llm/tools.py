@@ -169,6 +169,12 @@ EXCEL_TOOL_SCHEMA = {
     },
 }
 
+LIST_SHEETS_TOOL_SCHEMA = {
+    "name": "list_excel_sheets",
+    "description": "Return the available sheet names from the uploaded Excel workbook.",
+    "parameters": {"type": "object", "properties": {}},
+}
+
 FUND_SERIES_TOOL_SCHEMA = {
     "name": "get_fund_series",
     "description": (
@@ -288,6 +294,7 @@ TOOLS = [
     {"type": "function", "function": FX_RATE_TOOL_SCHEMA},
     {"type": "function", "function": DRAWDOWN_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": EXCEL_TOOL_SCHEMA},      # ← NEW
+    {"type": "function", "function": LIST_SHEETS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_MONTH_VALUE_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_RANKINGS_TOOL_SCHEMA},  # ← NEW
