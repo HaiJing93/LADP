@@ -30,6 +30,7 @@ from features.excel.loader import (
     load_excel,
     get_fund_series,
     get_fund_month_value,
+    get_fund_rankings,    
 )
 
 # --------------------------------------------------------------------------- #
@@ -79,7 +80,7 @@ with st.sidebar:
         else:
             st.error("No readable text found in the uploaded PDFs.")
      
-    st.header("📊 Excel Data")
+    st.header("📊 Fund Data Excel")
     excel_file = st.file_uploader(
         "Upload Excel",
         type=["xlsx", "xls"],
@@ -97,6 +98,21 @@ with st.sidebar:
                 st.dataframe(excel_data[sheet])
         except Exception as exc:
             st.error(f"Failed to load Excel: {exc}")
+
+    st.header("🏅 Rankings Excel")
+    ranking_file = st.file_uploader(
+        "Upload Rankings Excel",
+        type=["xlsx", "xls"],
+        accept_multiple_files=False,
+        key="ranking_excel_upload",
+    )
+
+    if ranking_file is not None:
+        try:
+            ranking_data = load_excel(ranking_file)
+            st.session_state["ranking_excel_data"] = ranking_data
+        except Exception as exc:
+            st.error(f"Failed to load rankings Excel: {exc}")
 
 
 # --------------------------------------------------------------------------- #
@@ -398,7 +414,7 @@ if user_input:
                         except Exception as exc:
                             tool_content = f"Error retrieving fund series for '{fund_name}': {exc}"
                             st.error(f"Error retrieving fund data: {exc}")
-
+        
             # ---------- fund value for specific month -------------------- #
             elif name == "get_fund_month_value":
                 excel_data = st.session_state.get("excel_data")
@@ -425,6 +441,26 @@ if user_input:
                         except Exception as exc:
                             tool_content = f"Error retrieving fund value: {exc}"
                             st.error(f"Error retrieving fund value: {exc}")
+
+            # ---------- fund rankings lookup --------------------------- #
+            elif name == "get_fund_rankings":
+                ranking_data = st.session_state.get("ranking_excel_data")
+                if not ranking_data:
+                    tool_content = "No rankings Excel available. Please upload a rankings file first."
+                else:
+                    ticker = args.get("ticker")
+                    sheet = args.get("sheet")
+                    try:
+                        ranks = get_fund_rankings(ranking_data, ticker, sheet)
+                        if ranks is None:
+                            tool_content = (
+                                f"Ticker '{ticker}' not found in the rankings workbook."
+                            )
+                        else:
+                            tool_content = json.dumps(ranks)
+                    except Exception as exc:
+                        tool_content = f"Error retrieving fund rankings: {exc}"
+                        st.error(tool_content)
 
             # ---------- combined fund metrics ----------------------------- #
             elif name == "calculate_fund_metrics":
@@ -530,11 +566,6 @@ if user_input:
         print("=== END RESPONSE DEBUG ===")
     else:
         assistant_reply = choice.message.content or ""
-
-    st.chat_message("assistant").markdown(assistant_reply)
-    st.session_state.messages.append(
-        {"role": "assistant", "content": assistant_reply}
-    )
 
     st.chat_message("assistant").markdown(assistant_reply)
     st.session_state.messages.append(
