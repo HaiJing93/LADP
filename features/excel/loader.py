@@ -147,3 +147,76 @@ def get_fund_month_value(
     if pd.isna(value):
         return None
     return float(value)
+
+
+def get_fund_rankings(
+    excel_data: dict[str, pd.DataFrame],
+    ticker: str,
+    sheet: str | None = None,
+) -> dict[str, float | int] | None:
+    """Return ranking information for ``ticker`` across the workbook.
+
+    The lookup is case-insensitive against column **B** (index 1). If the ticker
+    is found, the function extracts rank values from the following columns:
+
+    - ``R`` (Total Points)
+    - ``V`` (1‑yr return)
+    - ``Y`` (3‑yr return)
+    - ``AB`` (5‑yr return)
+    - ``AM`` (Maximum Drawdown)
+    - ``AO`` (Sharpe Ratio)
+    - ``AQ`` (Sortino Ratio)
+    - ``AS`` (Treynor Measure)
+
+    Column letters are interpreted using zero-based indices, so if the provided
+    sheet does not contain enough columns the missing ranks are returned as
+    ``None``. ``None`` is also returned when the ticker cannot be found.
+    """
+
+    def _search(df: pd.DataFrame) -> dict[str, float | int] | None:
+        tickers = df.iloc[:, 1].astype(str).str.strip().str.lower()
+        mask = tickers == ticker.strip().lower()
+        if not mask.any():
+            return None
+        row = df.loc[mask].iloc[0]
+
+        def _get(col_idx: int) -> float | int | None:
+            if col_idx >= len(row):
+                return None
+            val = row.iloc[col_idx]
+            if pd.isna(val):
+                return None
+            try:
+                return float(str(val).replace("%", "").replace(",", ""))
+            except Exception:
+                return None
+
+        col_map = {
+            "rank_total_pts": 17,  # R
+            "rank_1yr": 21,       # V
+            "rank_3yr": 24,       # Y
+            "rank_5yr": 27,       # AB
+            "rank_max_dd": 38,    # AM
+            "rank_sharpe": 40,    # AO
+            "rank_sortino": 42,   # AQ
+            "rank_treynor": 44,   # AS
+        }
+        return {k: _get(idx) for k, idx in col_map.items()}
+
+    # 1) explicit sheet
+    if sheet:
+        df = excel_data.get(sheet)
+        if df is not None:
+            res = _search(df)
+            if res is not None:
+                return res
+
+    # 2) search all sheets
+    for name, df in excel_data.items():
+        if sheet and name == sheet:
+            continue
+        res = _search(df)
+        if res is not None:
+            return res
+
+    return None
