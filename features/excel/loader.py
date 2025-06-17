@@ -46,6 +46,11 @@ def load_excel(file):
             if pd.api.types.is_datetime64_any_dtype(df[col]):
                 df[col] = df[col].dt.strftime("%d-%b-%Y")
 
+        # Ensure object columns are cast to plain strings for Arrow
+        obj_cols = df.select_dtypes(include="object").columns
+        for obj in obj_cols:
+            df[obj] = df[obj].astype(str)
+
         result[sheet] = df
     
     return result
