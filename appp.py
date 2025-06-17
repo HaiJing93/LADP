@@ -111,6 +111,12 @@ with st.sidebar:
         try:
             ranking_data = load_excel(ranking_file)
             st.session_state["ranking_excel_data"] = ranking_data
+            ranking_sheet_names = list(ranking_data)
+            if ranking_sheet_names:
+                r_sheet = st.selectbox(
+                    "Rankings Sheet", ranking_sheet_names, key="ranking_sheet"
+                )
+                st.dataframe(ranking_data[r_sheet])
         except Exception as exc:
             st.error(f"Failed to load rankings Excel: {exc}")
 
