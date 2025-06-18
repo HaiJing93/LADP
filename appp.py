@@ -478,13 +478,13 @@ if user_input:
                     ticker = args.get("ticker")
                     sheet = args.get("sheet")
                     try:
-                        ranks = get_fund_rankings(ranking_data, ticker, sheet)
-                        if ranks is None:
+                        rankings = get_fund_rankings(ranking_data, ticker, sheet)
+                        if rankings is None:
                             tool_content = (
                                 f"Ticker '{ticker}' not found in the rankings workbook."
                             )
                         else:
-                            tool_content = json.dumps(ranks)
+                            tool_content = json.dumps(rankings)
                     except Exception as exc:
                         tool_content = f"Error retrieving fund rankings: {exc}"
                         st.error(tool_content)
@@ -550,54 +550,6 @@ if user_input:
                     
                     if not fund_found:
                         available_sheets = list(excel_data.keys())
-                        tool_content = f"Fund '{fund_name}' not found in any available sheets: {', '.join(available_sheets)}. Please check the fund name spelling or upload the correct Excel file."
-
-            # ---------- fallback ------------------------------------------ #
-            else:
-                tool_content = f"Unknown tool call: {name}"
-
-            tool_messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": call.id,
-                    "name": name,
-                    "content": tool_content,
-                }
-            )
-
-        # --------------- second LLM call --------------------------------- #
-        assistant_call_msg = choice.message.model_dump(exclude_none=True)
-        assistant_call_msg["content"] = assistant_call_msg.get("content") or ""
-
-        # ---------- DEBUG: Print tool messages before second call -------- #
-        print("=== TOOL CALL DEBUG ===")
-        for i, tool_msg in enumerate(tool_messages):
-            print(f"Tool {i+1}: {tool_msg['name']}")
-            print(f"Content: {tool_msg['content'][:200]}{'...' if len(tool_msg['content']) > 200 else ''}")
-            print("---")
-        print("=== END TOOL DEBUG ===")
-
-        follow_resp = ask_llm(
-            st.session_state.messages + [assistant_call_msg] + tool_messages,
-            None,
-            "",
-            top_k=0,
-            enable_tools=False,
-        )
-        assistant_reply = follow_resp.choices[0].message.content or ""
-        
-        # ---------- DEBUG: Print final response ----------------------- #
-        print(f"=== FINAL LLM RESPONSE DEBUG ===")
-        print(f"Response length: {len(assistant_reply)}")
-        print(f"Response content: '{assistant_reply[:500]}{'...' if len(assistant_reply) > 500 else ''}'")
-        print("=== END RESPONSE DEBUG ===")
-    else:
-        assistant_reply = choice.message.content or ""
-
-    st.chat_message("assistant").markdown(assistant_reply)
-    st.session_state.messages.append(
-        {"role": "assistant", "content": assistant_reply}
-    )
                         tool_content = f"Fund '{fund_name}' not found in any available sheets: {', '.join(available_sheets)}. Please check the fund name spelling or upload the correct Excel file."
 
             # ---------- fallback ------------------------------------------ #
