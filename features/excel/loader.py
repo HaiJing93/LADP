@@ -225,3 +225,8 @@ def get_fund_rankings(
             return res
 
     return None
+
+def list_sheets(excel_data: dict[str, pd.DataFrame]) -> list[str]:
+    """Return all sheet names present in the uploaded workbook."""
+    return list(excel_data)
+
