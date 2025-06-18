@@ -383,6 +383,27 @@ if user_input:
                     else:
                         tool_content = df.head(rows).to_json(orient="records")
 
+            # ---------- rankings excel data ------------------------------ #
+            elif name == "get_ranking_excel_data":
+                ranking_data = st.session_state.get("ranking_excel_data")
+                if not ranking_data:
+                    tool_content = "No rankings Excel available."
+                else:
+                    sheet = args.get("sheet")
+                    rows = int(args.get("rows", 5))
+                    df = ranking_data.get(sheet)
+                    if df is None:
+                        tool_content = f"Sheet '{sheet}' not found in rankings workbook."
+                    else:
+                        tool_content = df.head(rows).to_json(orient="records")
+          
+            # ---------- list excel sheets ------------------------------ #
+            elif name == "list_excel_sheets":
+                excel_data = st.session_state.get("excel_data")
+                if not excel_data:
+                    tool_content = "No Excel data available. Please upload an Excel file first."
+                else:
+                    tool_content = json.dumps({"sheets": list(excel_data.keys())})
             # ---------- fund series from excel ----------------------------- #
             elif name == "get_fund_series":
                 excel_data = st.session_state.get("excel_data")
@@ -529,6 +550,54 @@ if user_input:
                     
                     if not fund_found:
                         available_sheets = list(excel_data.keys())
+                        tool_content = f"Fund '{fund_name}' not found in any available sheets: {', '.join(available_sheets)}. Please check the fund name spelling or upload the correct Excel file."
+
+            # ---------- fallback ------------------------------------------ #
+            else:
+                tool_content = f"Unknown tool call: {name}"
+
+            tool_messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": call.id,
+                    "name": name,
+                    "content": tool_content,
+                }
+            )
+
+        # --------------- second LLM call --------------------------------- #
+        assistant_call_msg = choice.message.model_dump(exclude_none=True)
+        assistant_call_msg["content"] = assistant_call_msg.get("content") or ""
+
+        # ---------- DEBUG: Print tool messages before second call -------- #
+        print("=== TOOL CALL DEBUG ===")
+        for i, tool_msg in enumerate(tool_messages):
+            print(f"Tool {i+1}: {tool_msg['name']}")
+            print(f"Content: {tool_msg['content'][:200]}{'...' if len(tool_msg['content']) > 200 else ''}")
+            print("---")
+        print("=== END TOOL DEBUG ===")
+
+        follow_resp = ask_llm(
+            st.session_state.messages + [assistant_call_msg] + tool_messages,
+            None,
+            "",
+            top_k=0,
+            enable_tools=False,
+        )
+        assistant_reply = follow_resp.choices[0].message.content or ""
+        
+        # ---------- DEBUG: Print final response ----------------------- #
+        print(f"=== FINAL LLM RESPONSE DEBUG ===")
+        print(f"Response length: {len(assistant_reply)}")
+        print(f"Response content: '{assistant_reply[:500]}{'...' if len(assistant_reply) > 500 else ''}'")
+        print("=== END RESPONSE DEBUG ===")
+    else:
+        assistant_reply = choice.message.content or ""
+
+    st.chat_message("assistant").markdown(assistant_reply)
+    st.session_state.messages.append(
+        {"role": "assistant", "content": assistant_reply}
+    )
                         tool_content = f"Fund '{fund_name}' not found in any available sheets: {', '.join(available_sheets)}. Please check the fund name spelling or upload the correct Excel file."
 
             # ---------- fallback ------------------------------------------ #
