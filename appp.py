@@ -478,13 +478,13 @@ if user_input:
                     ticker = args.get("ticker")
                     sheet = args.get("sheet")
                     try:
-                        ranks = get_fund_rankings(ranking_data, ticker, sheet)
-                        if ranks is None:
+                        rankings = get_fund_rankings(ranking_data, ticker, sheet)
+                        if rankings is None:
                             tool_content = (
                                 f"Ticker '{ticker}' not found in the rankings workbook."
                             )
                         else:
-                            tool_content = json.dumps(ranks)
+                            tool_content = json.dumps(rankings)
                     except Exception as exc:
                         tool_content = f"Error retrieving fund rankings: {exc}"
                         st.error(tool_content)
