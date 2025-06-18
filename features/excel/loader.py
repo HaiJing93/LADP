@@ -218,7 +218,7 @@ def get_fund_rankings(
         df = excel_data.get(sheet)
         if df is not None:
             searched.add(sheet)
-            res = _search(df)
+            res = _search(df)            
             if res is not None:
                 results[sheet] = res
 
