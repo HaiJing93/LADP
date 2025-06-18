@@ -158,8 +158,8 @@ def get_fund_rankings(
     excel_data: dict[str, pd.DataFrame],
     ticker: str,
     sheet: str | None = None,
-) -> dict[str, float | int] | None:
-    """Return ranking information for ``ticker`` across the workbook.
+) -> dict[str, dict[str, float | int]] | None:
+    """Return ranking information for ``ticker``.
 
     The lookup is case-insensitive against column **B** (index 1). If the ticker
     is found, the function extracts rank values from the following columns:
@@ -173,9 +173,11 @@ def get_fund_rankings(
     - ``AQ`` (Sortino Ratio)
     - ``AS`` (Treynor Measure)
 
-    Column letters are interpreted using zero-based indices, so if the provided
-    sheet does not contain enough columns the missing ranks are returned as
-    ``None``. ``None`` is also returned when the ticker cannot be found.
+    Column letters are interpreted using zero-based indices, so if a sheet does
+    not contain enough columns the missing ranks are returned as ``None``.
+    ``None`` is returned when the ticker cannot be found in any sheet.  The
+    result is a dictionary mapping each sheet name that contains the ticker to
+    the extracted ranking values, e.g. ``{"Sheet1": {"rank_total_pts": 1, ...}}``.
     """
 
     def _search(df: pd.DataFrame) -> dict[str, float | int] | None:
@@ -208,23 +210,27 @@ def get_fund_rankings(
         }
         return {k: _get(idx) for k, idx in col_map.items()}
 
-    # 1) explicit sheet
+    results: dict[str, dict[str, float | int]] = {}
+
+    # Search the explicitly provided sheet first if given
+    searched: set[str] = set()
     if sheet:
         df = excel_data.get(sheet)
         if df is not None:
-            res = _search(df)
+            searched.add(sheet)
+            res = _search(df)            
             if res is not None:
-                return res
+                results[sheet] = res
 
-    # 2) search all sheets
+    # Search remaining sheets
     for name, df in excel_data.items():
-        if sheet and name == sheet:
+        if name in searched:
             continue
         res = _search(df)
         if res is not None:
-            return res
+            results[name] = res
 
-    return None
+    return results or None
 
 def list_sheets(excel_data: dict[str, pd.DataFrame]) -> list[str]:
     """Return all sheet names present in the uploaded workbook."""
