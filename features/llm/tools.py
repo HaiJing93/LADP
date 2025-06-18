@@ -218,8 +218,10 @@ FUND_RANKINGS_TOOL_SCHEMA = {
     "name": "get_fund_rankings",
     "description": (
         "Search column B across the uploaded rankings workbook for a ticker "
-        "and return ranking values from columns R, V, Y, AB, AM, AO, AQ and AS. Always use the full ticker exactly as provided by the user, including spaces or suffixes such as 'US Equity'. "
-        "An optional sheet name can be provided to narrow the search."
+        "and return ranking values from columns R, V, Y, AB, AM, AO, AQ and AS. "
+        "Always use the full ticker exactly as provided by the user, including spaces or suffixes such as 'US Equity'. "
+        "The result is a dictionary keyed by sheet name for every sheet containing the ticker. "
+        "You may provide a sheet name to hint where to look first."
     ),
     "parameters": {
         "type": "object",
