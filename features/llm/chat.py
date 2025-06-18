@@ -2,9 +2,8 @@
 """
 Wrapper around Azure OpenAI chat completion with optional RAG context.
 
-v2.8.3
-• Fix: Completely removed duplicate tool definitions
-• Use only consolidated tools from tools.py
+v2.8.4
+• Fix: Fixed one sheet, but needs for it to provide more details 
 """
 from __future__ import annotations
 
@@ -81,8 +80,9 @@ def ask_llm(
     sys_prompt += (
         "\n\nIf the user requests data that lives in the uploaded Excel "
         "workbook, call the `get_excel_data`, `get_fund_rankings`, "
-        "`get_fund_series`, or `get_fund_month_value` functions as appropriate. "
+        "`list_excel_sheets`, `get_fund_series`, or `get_fund_month_value` functions as appropriate. "
         "`get_fund_rankings` can search all sheets if no sheet name is given. "
+        "Do not assume a sheet called 'Main Funds'. If you are unsure which sheet contains the data, omit the sheet parameter so the function searches the entire workbook. "
         "If you receive an error about sheet names, immediately retry with one of the "
         "available sheet names mentioned in the error message. Do not give up after "
         "the first error - always attempt to use the correct sheet names."
