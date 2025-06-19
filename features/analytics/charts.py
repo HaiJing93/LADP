@@ -1,9 +1,18 @@
+import io
+from typing import Iterable
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import streamlit as st
 
 
-def draw_pie(labels, values):
-    """Render a donut‑style pie chart inside Streamlit."""
+def _store_chart(entry: dict) -> None:
+    """Append a chart entry to ``st.session_state.charts``."""
+    st.session_state.setdefault("charts", []).append(entry)
+
+
+def draw_pie(labels: Iterable[str], values: Iterable[float], title: str = "Pie Chart") -> None:
+    """Render a donut‑style pie chart inside Streamlit and persist it."""
     fig, ax = plt.subplots(figsize=(6, 6))
     colors = plt.cm.tab20.colors[: len(labels)]
     explode = [0.05] * len(labels)
@@ -28,4 +37,20 @@ def draw_pie(labels, values):
         bbox_to_anchor=(1, 0, 0.5, 1),
     )
     ax.set_aspect("equal")
-    st.pyplot(fig)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+
+    _store_chart({"type": "pie", "title": title, "image": buf.getvalue()})
+
+    st.subheader(title)
+    st.image(buf.getvalue())
+
+
+def draw_line_chart(dates: Iterable[str], values: Iterable[float], title: str = "Line Chart") -> None:
+    """Render a line chart inside Streamlit and persist it."""
+    df = pd.DataFrame({"value": list(values)}, index=pd.to_datetime(list(dates)))
+    _store_chart({"type": "line", "title": title, "data": df})
+    st.subheader(title)
+    st.line_chart(df)

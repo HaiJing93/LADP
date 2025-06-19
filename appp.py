@@ -5,7 +5,6 @@
 from __future__ import annotations  # must be first executable line
 
 import json
-from pathlib import Path
 import pandas as pd
 import streamlit as st
 
@@ -13,7 +12,7 @@ from config.settings import settings
 from features.pdfs.indexer import index_pdfs
 from features.llm.chat import ask_llm
 from openai import OpenAIError
-from features.analytics.charts import draw_pie
+from features.analytics.charts import draw_pie, draw_line_chart
 from features.analytics.portfolio import (
     compute_portfolio_metrics,
     compute_portfolio_metrics_from_excel,
@@ -126,9 +125,17 @@ with st.sidebar:
 # --------------------------------------------------------------------------- #
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "charts" not in st.session_state:
+    st.session_state.charts = []
 
 for m in st.session_state.messages:
     st.chat_message(m["role"]).markdown(m["content"])
+for c in st.session_state.charts:
+    st.subheader(c.get("title", "Chart"))
+    if c.get("type") == "pie":
+        st.image(c.get("image"))
+    elif c.get("type") == "line":
+        st.line_chart(c.get("data"))
 
 # --------------------------------------------------------------------------- #
 # Chat loop                                                                   #
@@ -168,7 +175,7 @@ if user_input:
 
             # ---------- pie ------------------------------------------------ #
             if name == "create_pie_chart":
-                draw_pie(args["labels"], args["values"])
+                draw_pie(args["labels"], args["values"], title="Pie Chart")
                 tool_content = "Pie chart rendered."
 
             # ---------- portfolio metrics --------------------------------- #
@@ -303,13 +310,9 @@ if user_input:
                 # cache for later draw-down queries
                 st.session_state["last_series"] = [p for _, p in series]
 
-                if len(series) > 1 and "plot" in user_input.lower():
+                if len(series) > 1 and any(k in user_input.lower() for k in ["plot", "chart", "graph"]):
                     dates, prices = zip(*series)
-                    st.line_chart(
-                        pd.DataFrame(
-                            {"Price": prices}, index=pd.to_datetime(dates)
-                        )
-                    )
+                    draw_line_chart(dates, prices, title=f"Price History: {args['ticker'].upper()}")
                 elif len(series) <= 1:
                     st.warning(
                         "Only one data point returned; unable to plot a series."
