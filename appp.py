@@ -46,10 +46,10 @@ st.markdown(
     """
     <style>
         [data-testid="stSidebar"] {
-            background-color: #242459;
+            background-color: #FFFFFF;
         }
         [data-testid="stSidebar"] * {
-            color: white;
+            color: #242459;
         }
         [data-testid="stHeader"] {
             background-color: #242459;
