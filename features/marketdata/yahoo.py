@@ -15,6 +15,11 @@ import pandas as pd
 import yfinance as yf
 
 
+def _clean_ticker(ticker: str) -> str:
+    """Return the first whitespace-separated token in uppercase."""
+    return ticker.split()[0].upper()
+
+
 Interval = Literal["1m", "5m", "15m", "30m", "60m", "1d", "1wk", "1mo"]
 
 # ----------------------------------------------------------------------- #
@@ -87,7 +92,7 @@ def get_stock_history(
     Fetch historical prices via Ticker.history(). Guaranteed ≥2 rows
     when data exists; falls back to .download('max') then slices.
     """
-    ticker = ticker.upper()
+    ticker = _clean_ticker(ticker)
 
     def _pull_hist(p: str, i: str) -> pd.Series:
         df = yf.Ticker(ticker).history(period=p, interval=i, auto_adjust=False)
@@ -126,7 +131,8 @@ def get_stock_quote(ticker: str) -> Dict:
     """
     Return a snapshot dict with latest price & key ratios.
     """
-    T = yf.Ticker(ticker.upper())
+    symbol = _clean_ticker(ticker)
+    T = yf.Ticker(symbol)
     info = T.fast_info  # fast_info is lightweight vs .info
 
     price = float(info["last_price"])
