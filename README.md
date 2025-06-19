@@ -18,3 +18,7 @@ Start the Streamlit interface with:
 streamlit run appp.py
 ```
 Once running, upload one or more PDF statements in the sidebar, build the index and then chat with the bot in the main window.
+
+### UI theme
+
+The app ships with a basic Streamlit theme that reflects the corporate colours `#242459` and white. You can adjust these values in `.streamlit/config.toml`.

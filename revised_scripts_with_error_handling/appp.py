@@ -35,6 +35,36 @@ st.set_page_config(
 )
 st.title("🤖 PDF-Aware Finance Chatbot (Azure OpenAI)")
 
+# Inject basic styling to match company colours
+st.markdown(
+    """
+    <style>
+        [data-testid="stSidebar"] {
+            background-color: #242459;
+        }
+        [data-testid="stSidebar"] * {
+            color: white;
+        }
+        [data-testid="stHeader"] {
+            background-color: #242459;
+        }
+        [data-testid="stHeader"] * {
+            color: white;
+        }
+        div.stButton > button {
+            background-color: #242459;
+            color: white;
+            border: none;
+        }
+        div.stButton > button:hover {
+            background-color: #1d1d4a;
+            color: white;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # --------------------------------------------------------------------------- #
 # Tabs – sliders                                                              #
 # --------------------------------------------------------------------------- #
