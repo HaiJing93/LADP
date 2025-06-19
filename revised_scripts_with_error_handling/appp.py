@@ -40,9 +40,14 @@ st.markdown(
     """
     <style>
         [data-testid="stSidebar"] {
-            background-color: #FFFFFF;
+            background-color: #242459;
         }
         [data-testid="stSidebar"] * {
+            color: #242459;
+        }
+        [data-testid="stSidebar"] .stFileUploader,
+        [data-testid="stSidebar"] [data-testid="stFileUploadDropzone"] {
+            background-color: #FFFFFF;
             color: #242459;
         }
         [data-testid="stHeader"] {
