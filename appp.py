@@ -40,40 +40,213 @@ st.set_page_config(
     page_title="PDF-Aware Finance Chatbot", page_icon="🤖", layout="centered"
 )
 st.title("🤖 PDF-Aware Finance Chatbot (Azure OpenAI)")
-
 # Inject basic styling to match company colours
+
 st.markdown(
     """
     <style>
-        [data-testid="stSidebar"] {
-            background-color: #242459;
-        }
-        [data-testid="stSidebar"] * {
-            color: #242459;
-        }
-        [data-testid="stSidebar"] .stFileUploader,
-        [data-testid="stSidebar"] [data-testid="stFileUploadDropzone"] {
-            background-color: #FFFFFF;
-            color: #242459;
-        }
-        [data-testid="stHeader"] {
-            background-color: #242459;
-        }
-        [data-testid="stHeader"] * {
-            color: white;
-        }
-        div.stButton > button {
-            background-color: #242459;
-            color: white;
-            border: none;
-        }
-        div.stButton > button:hover {
-            background-color: #1d1d4a;
-            color: white;
-        }
+    /********  GLOBAL  ********/
+    html, body, [data-testid=\"stAppViewContainer\"] {
+        background-color: #F8F9FA;
+        color: #212529;
+    }
+
+    /********  SIDEBAR  ********/
+    [data-testid=\"stSidebar\"] {
+        background-color: #F0F4F8;
+    }
+    [data-testid="stSidebar"] * {
+        color: #232D4B !important;
+    }
+
+    /********  HEADER  ********/
+    [data-testid=\"stHeader\"] {
+        background-color: #232D4B;
+    }
+    [data-testid=\"stHeader\"] * {
+        color: #FFFFFF !important;
+    }
+    header [data-testid=\"collapsedControl\"] svg,
+    header [data-testid=\"stDeployButton\"] * {
+        color: #FFFFFF !important;
+        fill: #FFFFFF !important;
+    }
+
+    /********  BUTTONS  ********/
+    div.stButton > button {
+        background-color: #E8B00F;
+        color: #212529;
+        border: 1px solid #E8B00F;
+    }
+    div.stButton > button:hover,
+    div.stButton > button:focus {
+        background-color: #D9A10D;
+        color: #212529;
+        border: 1px solid #D9A10D;
+    }
+
+    /********  FORM INPUTS  ********/
+    .stTextInput input,
+    .stNumberInput input,
+    .stDateInput input {
+        border: 1px solid #486581;
+    }
+    .stTextInput input::placeholder,
+    .stNumberInput input::placeholder {
+        color: #486581;
+        opacity: 1;
+    }
+    [data-baseweb=\"form-control-caption\"] {
+        color: #486581;
+        font-style: italic;
+    }
+
+    /********  FILE UPLOADER  ********/
+    [data-testid=\"stFileUploadDropzone\"] {
+        background-color: #F0F4F8;
+        border: 2px dashed #BCCCDC;
+        color: #486581;
+    }
+
+    /********  TABS  ********/
+    [data-testid=\"stTabs\"] [role=\"tablist\"] {
+        background-color: transparent;
+    }
+    [data-testid=\"stTabs\"] button {
+        color: #486581;
+        border-bottom: 3px solid transparent;
+    }
+    [data-testid=\"stTabs\"] button:hover {
+        background-color: #F0F4F8;
+    }
+    [data-testid=\"stTabs\"] button[aria-selected=\"true\"] {
+        border-bottom: 3px solid #E8B00F;
+        color: #E8B00F;
+    }
+
+    /********  EXPANDERS  ********/
+    .stExpanderHeader {
+        background-color: #F0F4F8;
+        color: #212529;
+    }
+    .stExpanderContent {
+        background-color: #F8F9FA;
+    }
+
+    /********  METRICS  ********/
+    .stMetric span[data-testid=\"stMetricValue\"] {
+        color: #212529;
+    }
+    .stMetric span[data-testid=\"stMetricDeltaPositive\"],
+    .stMetric span[data-testid=\"stMetricDelta\"] {
+        color: #198754;
+    }
+    .stMetric span[data-testid=\"stMetricDeltaNegative\"] {
+        color: #DC3545;
+    }
+
+    /********  PROGRESS BAR  ********/
+    .stProgress > div > div > div > div {
+        background-color: #E8B00F;
+    }
+
+    /********  DATAFRAMES  ********/
+    .stDataFrame thead th {
+        background-color: #F0F4F8;
+        color: #212529;
+    }
+    .stDataFrame tbody tr:nth-child(even) {
+        background-color: #F8F9FA;
+    }
+    .stDataFrame tbody tr:nth-child(odd) {
+        background-color: #F0F4F8;
+    }
+    .stDataFrame tbody td {
+        border-color: #BCCCDC;
+    }
+
+    /********  CODE BLOCKS  ********/
+    pre[data-testid=\"stMarkdownCodeBlock\"] {
+        background-color: #102A43;
+        color: #F0F4F8;
+        border-radius: 6px;
+    }
+
+    /********  ALERTS  ********/
+    .stAlert {
+        border-left: 0.4rem solid #FFC107; /* default: warning */
+        background-color: #F0F4F8;
+        color: #212529;
+    }
+
+    /********  CHAT  ********/
+    [data-testid=\"stChatMessage\"] {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+    }
+    /* Assistant (even index) */
+    [data-testid=\"stChatMessage\"]:nth-of-type(2n),
+    [data-testid=\"stChatMessage\"]:nth-of-type(2n) * {
+        background-color: #F0F4F8;
+        color: #212529 !important;
+    }
+    /* User (odd index) */
+    [data-testid=\"stChatMessage\"]:nth-of-type(2n+1),
+    [data-testid=\"stChatMessage\"]:nth-of-type(2n+1) * {
+        background-color: #232D4B;
+        color: #FFFFFF !important;
+    }
+
+    /* Chat input wrapper */
+    [data-testid=\"stChatInput\"] {
+        background-color: #F8F9FA;          /* pill fill */
+        border: 1px solid #F8F9FA;         /* invisible edge */
+        border-radius: 24px;
+        padding: 0.25rem 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    /* Chat input textarea */
+    [data-testid=\"stChatInput\"] textarea {
+        background: transparent;
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #212529;
+        flex: 1;
+    }
+    /* Focus ring exactly matching border */
+    [data-testid=\"stChatInput\"]:focus-within {
+        border: 1px solid #E8B00F;
+        box-shadow: none; /* remove extra glow so highlight equals border */
+    }
+
+    /* Send-arrow icon */
+    [data-testid=\"stChatInput\"] button svg {
+        stroke: #FFFFFF;
+    }
+    [data-testid=\"stChatInput\"] button:hover svg {
+        stroke: #FFFFFF;
+    }
+
+    /********  SCROLLBAR  (WebKit) ********/
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #BCCCDC;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #829AB1;
+        border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #486581;
+    }
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
 # --------------------------------------------------------------------------- #
