@@ -7,8 +7,8 @@ import streamlit as st
 
 
 def _store_chart(entry: dict) -> None:
-    """Append a chart entry to ``st.session_state.charts``."""
-    st.session_state.setdefault("charts", []).append(entry)
+    """Append a chart entry to ``st.session_state.display_history``."""
+    st.session_state.setdefault("display_history", []).append(entry)
 
 
 def draw_pie(labels: Iterable[str], values: Iterable[float], title: str = "Pie Chart") -> None:
