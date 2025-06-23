@@ -35,12 +35,6 @@ from features.excel.loader import (
 # --------------------------------------------------------------------------- #
 # Streamlit page config                                                       #
 # --------------------------------------------------------------------------- #
-st.set_page_config(
-    page_title="PDF-Aware Finance Chatbot", page_icon="🤖", layout="centered"
-)
-st.title("🤖 PDF-Aware Finance Chatbot (Azure OpenAI)")
-# Inject basic styling to match company colours
-
 st.markdown(
     """
     <style>
@@ -248,6 +242,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
+
 # --------------------------------------------------------------------------- #
 # Tabs – sliders                                                              #
 # --------------------------------------------------------------------------- #
@@ -336,14 +332,19 @@ if "messages" not in st.session_state:
 if "charts" not in st.session_state:
     st.session_state.charts = []
 
-for m in st.session_state.messages:
-    st.chat_message(m["role"]).markdown(m["content"])
-for c in st.session_state.charts:
-    st.subheader(c.get("title", "Chart"))
-    if c.get("type") == "pie":
-        st.image(c.get("image"))
-    elif c.get("type") == "line":
-        st.line_chart(c.get("data"))
+if "display_history" not in st.session_state:
+    st.session_state.display_history = []
+
+for entry in st.session_state.display_history:
+    if entry.get("type") == "text":
+        st.chat_message(entry["role"]).markdown(entry["content"])
+    elif entry.get("type") == "chart":
+        with st.chat_message("assistant"):
+            st.subheader(entry.get("title", "Chart"))
+            if entry.get("chart_type") == "pie":
+                st.image(entry.get("image"))
+            elif entry.get("chart_type") == "line":
+                st.line_chart(entry.get("data"))
 
 # --------------------------------------------------------------------------- #
 # Chat loop                                                                   #
@@ -352,6 +353,9 @@ user_input = st.chat_input("Ask me anything…")
 if user_input:
     st.chat_message("user").markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.display_history.append(
+        {"type": "text", "role": "user", "content": user_input}
+    )    
 
     # ---------------- first LLM call -------------------------------------- #
     try:
@@ -809,3 +813,6 @@ if user_input:
     st.session_state.messages.append(
         {"role": "assistant", "content": assistant_reply}
     )
+    st.session_state.display_history.append(
+        {"type": "text", "role": "assistant", "content": assistant_reply}
+    )    
