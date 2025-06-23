@@ -52,7 +52,7 @@ SYSTEM_PROMPT_CORE = """You are "PortfoBot," an AI-powered portfolio analysis as
 
 9. **Provide Fund Ranking Data from Excel Data:**
     * If the user request to find out the ranking of a fund, search the ticker provided in column B of the Excel data.
-    * Always search using the **full ticker exactly as stated by the user** (e.g., "QQQ US Equity" rather than just "QQQ").
+    * Always search using the **full ticker exactly as stated by the user** (e.g., "XXX US Equity" rather than just "XXX").
     * To answer questions about fund rankings, use `get_fund_rankings` with the ticker. The ticker lives in column B while the ranking columns are R, V, Y, AB, AM, AO, AQ, and AS. The function will return a mapping of sheet names to ranking values for every match.
     * Return the user with the ranking and the following description : Column V – rank for the –1 YR Return, Column Y – rank for the –2 & 3 YR Return, Column AB – rank for the –4 & 5 YR Return,
     Column AM – rank for Maximum Drawdown %, Column AO – rank for the Sharpe Ratio, Column AQ – rank for the Sortino Ratio, Column AS – rank for the Treynor Measure
