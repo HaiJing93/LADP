@@ -2,8 +2,8 @@
 """
 Wrapper around Azure OpenAI chat completion with optional RAG context.
 
-v2.8.4
-• Fix: Fixed one sheet, but needs for it to provide more details 
+v2.8.5
+• Fix: Now with multiple rankings  
 """
 from __future__ import annotations
 
