@@ -171,8 +171,22 @@ EXCEL_TOOL_SCHEMA = {
 
 LIST_SHEETS_TOOL_SCHEMA = {
     "name": "list_excel_sheets",
-    "description": "Return the available sheet names from the uploaded Excel workbook.",
-    "parameters": {"type": "object", "properties": {}},
+    "description": (
+        "Return the available sheet names from the uploaded Excel workbook. "
+        "Specify `workbook` as 'ranking' to list only the rankings workbook "
+        "sheets or 'portfolio' for the portfolio file. Use 'both' to show the "
+        "sheet names from every uploaded workbook."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "workbook": {
+                "type": "string",
+                "enum": ["portfolio", "ranking", "both"],
+                "description": "Which workbook to list sheets from. Defaults to 'both'.",
+            }
+        },
+    },
 }
 
 FUND_SERIES_TOOL_SCHEMA = {
@@ -230,6 +244,23 @@ FUND_RANKINGS_TOOL_SCHEMA = {
             "sheet": {"type": "string"},
         },
         "required": ["ticker"],
+    },
+}
+
+STARRED_RANKINGS_TOOL_SCHEMA = {
+    "name": "get_starred_ticker_rankings",
+    "description": (
+        "Find all rows in the specified Excel sheet where column A contains an "
+        "asterisk and return ranking information for the tickers in column B. "
+        "The result is a JSON array where each element contains the ticker and "
+        "its rank values. Rankings are looked up in the uploaded rankings workbook."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {"type": "string", "description": "Excel sheet name"},
+        },
+        "required": ["sheet"],
     },
 }
 
@@ -317,6 +348,7 @@ TOOLS = [
     {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_MONTH_VALUE_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_RANKINGS_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": STARRED_RANKINGS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_DETAILS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
