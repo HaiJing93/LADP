@@ -30,7 +30,8 @@ from features.excel.loader import (
     get_fund_series,
     get_fund_month_value,
     get_fund_rankings,
-    get_fund_details,
+    get_starred_ticker_rankings,
+    get_fund_details, 
 )
 
 # --------------------------------------------------------------------------- #
@@ -616,10 +617,29 @@ if user_input:
             # ---------- list excel sheets ------------------------------ #
             elif name == "list_excel_sheets":
                 excel_data = st.session_state.get("excel_data")
-                if not excel_data:
-                    tool_content = "No Excel data available. Please upload an Excel file first."
-                else:
-                    tool_content = json.dumps({"sheets": list(excel_data.keys())})
+                ranking_data = st.session_state.get("ranking_excel_data")
+                source = args.get("workbook", "both")
+
+                if source == "ranking":
+                    if not ranking_data:
+                        tool_content = "No rankings Excel available. Please upload a rankings file first."
+                    else:
+                        tool_content = json.dumps({"sheets": list(ranking_data.keys())})
+                elif source == "portfolio":
+                    if not excel_data:
+                        tool_content = "No Excel data available. Please upload an Excel file first."
+                    else:
+                        tool_content = json.dumps({"sheets": list(excel_data.keys())})
+                else:  # both
+                    if not excel_data and not ranking_data:
+                        tool_content = "No Excel data available. Please upload both Excel files first."
+                    else:
+                        sheets_info = {
+                            "portfolio": list(excel_data.keys()) if excel_data else [],
+                            "ranking": list(ranking_data.keys()) if ranking_data else [],
+                        }
+                        tool_content = json.dumps(sheets_info)
+
             # ---------- fund series from excel ----------------------------- #
             elif name == "get_fund_series":
                 excel_data = st.session_state.get("excel_data")
@@ -704,6 +724,41 @@ if user_input:
                     except Exception as exc:
                         tool_content = f"Error retrieving fund rankings: {exc}"
                         st.error(tool_content)
+
+            # ---------- starred ticker rankings ------------------------ #
+            elif name == "get_starred_ticker_rankings":
+                excel_data = st.session_state.get("excel_data")
+                ranking_data = st.session_state.get("ranking_excel_data")
+                if not excel_data or not ranking_data:
+                    tool_content = (
+                        "Excel data or rankings workbook not available. Please upload both files first."
+                    )
+                else:
+                    sheet = args.get("sheet")
+                    if not sheet:
+                        tool_content = "Please specify the sheet name to compare against."
+                    else:
+                        try:
+                            # Prefer the sheet from the fund data workbook, but fall back
+                            # to the rankings workbook if not present there.
+                            workbook = "portfolio" if sheet in excel_data else "ranking"
+                            if workbook == "portfolio" and sheet not in excel_data:
+                                tool_content = (
+                                    f"Sheet '{sheet}' not found. Available sheets: {', '.join(excel_data.keys())}"
+                                )
+                                raise ValueError("sheet not found")
+                            source_data = excel_data if sheet in excel_data else ranking_data
+                            res = get_starred_ticker_rankings(source_data, ranking_data, sheet)
+                            if not res:
+                                tool_content = "No starred tickers found in column A."
+                            else:
+                                tool_content = json.dumps(res)
+                        except Exception as exc:
+                            if str(exc) == "sheet not found":
+                                pass
+                            else:
+                                tool_content = f"Error retrieving starred rankings: {exc}"
+                                st.error(tool_content)
 
             # ---------- fund details lookup --------------------------- #
             elif name == "get_fund_details":
