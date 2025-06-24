@@ -29,7 +29,8 @@ from features.excel.loader import (
     load_excel,
     get_fund_series,
     get_fund_month_value,
-    get_fund_rankings,    
+    get_fund_rankings,
+    get_fund_details,
 )
 
 # --------------------------------------------------------------------------- #
@@ -702,6 +703,24 @@ if user_input:
                             tool_content = json.dumps(rankings)
                     except Exception as exc:
                         tool_content = f"Error retrieving fund rankings: {exc}"
+                        st.error(tool_content)
+
+            # ---------- fund details lookup --------------------------- #
+            elif name == "get_fund_details":
+                ranking_data = st.session_state.get("ranking_excel_data")
+                if not ranking_data:
+                    tool_content = "No rankings Excel available. Please upload a rankings file first."
+                else:
+                    ticker = args.get("ticker")
+                    sheet = args.get("sheet")
+                    try:
+                        details = get_fund_details(ranking_data, ticker, sheet)
+                        if details is None:
+                            tool_content = f"Ticker '{ticker}' not found in the rankings workbook."
+                        else:
+                            tool_content = json.dumps(details)
+                    except Exception as exc:
+                        tool_content = f"Error retrieving fund details: {exc}"
                         st.error(tool_content)
 
             # ---------- combined fund metrics ----------------------------- #

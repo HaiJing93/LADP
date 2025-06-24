@@ -80,7 +80,7 @@ def ask_llm(
     sys_prompt += (
         "\n\nIf the user requests data that lives in the uploaded Excel "
         "workbook, call the `get_excel_data`, `get_fund_rankings`, "
-        "`list_excel_sheets`, `get_fund_series`, or `get_fund_month_value` functions as appropriate. "
+        "`get_fund_details`, `list_excel_sheets`, `get_fund_series`, or `get_fund_month_value` functions as appropriate. "
         "`get_fund_rankings` returns a dictionary keyed by sheet name and searches all sheets if no sheet name is given. "
         "Do not assume a sheet called 'Main Funds'. If you are unsure which sheet contains the data, omit the sheet parameter so the function searches the entire workbook. "
         "If you receive an error about sheet names, immediately retry with one of the "

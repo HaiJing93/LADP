@@ -232,6 +232,90 @@ def get_fund_rankings(
 
     return results or None
 
+
+def get_fund_details(
+    excel_data: dict[str, pd.DataFrame],
+    ticker: str,
+    sheet: str | None = None,
+) -> dict[str, dict[str, str | float]] | None:
+    """Return detailed information for ``ticker`` from the workbook.
+
+    The search is case-insensitive against column **B**. If the ticker is
+    found, values from various columns (fund type, currency, short-term
+    returns, negative-year returns, and fees) are extracted. Long-term and
+    prior calendar year returns are omitted. The result is a dictionary keyed
+    by sheet name for each sheet containing the ticker. Sharpe Ratio,
+    Sortino Ratio and Treynor Measure values are returned in percentage
+    form.
+    """
+
+    def _clean(val):
+        if pd.isna(val):
+            return None
+        txt = str(val).replace("%", "").replace(",", "").strip()
+        try:
+            return float(txt)
+        except ValueError:
+            return str(val).strip()
+
+    def _search(df: pd.DataFrame) -> dict[str, str | float] | None:
+        tickers = df.iloc[:, 1].astype(str).str.strip().str.lower()
+        mask = tickers == ticker.strip().lower()
+        if not mask.any():
+            return None
+        row = df.loc[mask].iloc[0]
+
+        col_map = {
+            "fund_type": 3,           # D
+            "long_name": 7,           # H
+            "currency": 8,            # I
+            "mtd_total_return_pct": 11,  # L
+            "qtd_total_return_pct": 12,  # M
+            "ytd_total_return_pct": 13,  # N
+            "return_neg_1yr": 20,       # U
+            "return_neg_2_3yr": 23,     # X
+            "return_neg_4_5yr": 26,     # AA
+            "downside_risk_ann": 34,    # AI
+            "return_volatility": 35,    # AJ
+            "maximum_total_return": 36,  # AK
+            "maximum_drawdown_pct": 37,  # AL
+            "return_sharpe_ratio": 39,  # AN
+            "sortino_ratio": 41,       # AP
+            "treynor_measure": 43,     # AR
+            "fund_manager_fee": 52,    # BA
+            "expense_ratio": 53,       # BB
+        }
+
+        result = {k: _clean(row.iloc[idx]) if idx < len(row) else None for k, idx in col_map.items()}
+
+        pct_keys = ["return_sharpe_ratio", "sortino_ratio", "treynor_measure"]
+        for key in pct_keys:
+            val = result.get(key)
+            if isinstance(val, (int, float)):
+                result[key] = round(val * 100, 4)
+
+        return result
+
+    results: dict[str, dict[str, str | float]] = {}
+
+    searched: set[str] = set()
+    if sheet:
+        df = excel_data.get(sheet)
+        if df is not None:
+            searched.add(sheet)
+            res = _search(df)
+            if res is not None:
+                results[sheet] = res
+
+    for name, df in excel_data.items():
+        if name in searched:
+            continue
+        res = _search(df)
+        if res is not None:
+            results[name] = res
+
+    return results or None
+
 def list_sheets(excel_data: dict[str, pd.DataFrame]) -> list[str]:
     """Return all sheet names present in the uploaded workbook."""
     return list(excel_data)
