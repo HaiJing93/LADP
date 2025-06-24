@@ -233,6 +233,23 @@ FUND_RANKINGS_TOOL_SCHEMA = {
     },
 }
 
+FUND_DETAILS_TOOL_SCHEMA = {
+    "name": "get_fund_details",
+    "description": (
+        "Look up a ticker in column B across the uploaded workbook and return "
+        "detailed columns like fund type, currency, recent returns and fees. "
+        "You may specify a sheet name to narrow the search."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "ticker": {"type": "string"},
+            "sheet": {"type": "string"},
+        },
+        "required": ["ticker"],
+    },
+}
+
 FUND_METRICS_TOOL_SCHEMA = {
     "name": "calculate_fund_metrics",
     "description": (
@@ -300,6 +317,7 @@ TOOLS = [
     {"type": "function", "function": FUND_SERIES_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_MONTH_VALUE_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_RANKINGS_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": FUND_DETAILS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
     ]
