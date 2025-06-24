@@ -232,6 +232,60 @@ def get_fund_rankings(
 
     return results or None
 
+
+def get_starred_tickers(
+    excel_data: dict[str, pd.DataFrame],
+    sheet: str,
+) -> list[str]:
+    """Return tickers from ``sheet`` where column A contains an asterisk."""
+
+    df = excel_data.get(sheet)
+    if df is None or df.empty or df.shape[1] < 2:
+        return []
+    mask = df.iloc[:, 0].astype(str).str.contains(r"\*")
+    tickers = (
+        df.loc[mask, df.columns[1]]
+        .astype(str)
+        .str.strip()
+    )
+    tickers = tickers[~tickers.str.lower().str.contains("average")]
+    return tickers.tolist()
+
+
+def get_starred_ticker_rankings(
+    excel_data: dict[str, pd.DataFrame],
+    ranking_data: dict[str, pd.DataFrame],
+    sheet: str,
+) -> list[dict[str, float | int | str]]:
+"""Return ranking rows for each ticker marked with ``*`` in ``sheet``.
+
+    Starred rows may live in either the portfolio workbook or the rankings
+    workbook. The function first checks the portfolio workbook for the sheet and
+    falls back to the rankings workbook if no starred tickers are found there.
+
+    The result is a list of dictionaries that can be easily rendered as a table.
+    Each dictionary contains the ticker and the ranking values for the specified
+    sheet (or the first sheet where the ticker is found).
+    """
+
+    tickers = get_starred_tickers(excel_data, sheet)
+    if not tickers:
+        tickers = get_starred_tickers(ranking_data, sheet)
+    rows: list[dict[str, float | int | str]] = []
+    for ticker in tickers:
+        ranks = get_fund_rankings(ranking_data, ticker, sheet)
+        if ranks:
+            # Prefer the specified sheet if available, otherwise take the first
+            if sheet in ranks:
+                vals = ranks[sheet]
+            else:
+                vals = next(iter(ranks.values()))
+            row = {"ticker": ticker, **vals}
+        else:
+            row = {"ticker": ticker}
+        rows.append(row)
+    return rows
+
 def list_sheets(excel_data: dict[str, pd.DataFrame]) -> list[str]:
     """Return all sheet names present in the uploaded workbook."""
     return list(excel_data)

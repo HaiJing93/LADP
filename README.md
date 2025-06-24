@@ -22,3 +22,10 @@ Once running, upload one or more PDF statements in the sidebar, build the index 
 ### UI theme
 
 The app ships with a basic Streamlit theme that reflects the corporate colours `#242459` and white. You can adjust these values in `.streamlit/config.toml`.
+
+### Fund rankings
+
+When you upload the portfolio Excel sheets and a rankings workbook, the chatbot can fetch ranking data for a specific ticker using the `get_fund_rankings` tool.
+To see how a fund stacks up against the other marked funds in a sheet, ask for the rankings from that sheet and the bot will use `get_starred_ticker_rankings` to gather them. The bot returns these rankings in a table so the different tickers are easy to compare. Any starred row that contains the word "Average" is ignored so only real tickers are listed. If you do not mention a sheet name, the bot will ask you to provide one. Starred rows may be located in either workbook, so make sure both files are uploaded.
+Use `list_excel_sheets` to list the available sheet names. Pass `workbook="ranking"` or `workbook="portfolio"` to view sheets from a single workbook, or `workbook="both"` to show the sheet names from every uploaded workbook.
+Make sure both the portfolio workbook and the rankings workbook are uploaded in the sidebar before requesting any ranking lookups or comparisons.
