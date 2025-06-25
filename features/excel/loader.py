@@ -229,57 +229,91 @@ def get_fund_rankings(
 
     return results or None
 
-def get_starred_tickers(
-    excel_data: dict[str, pd.DataFrame],
+def get_starred_ticker_overview(
+    portfolio_data: dict[str, pd.DataFrame],
+    ranking_data: dict[str, pd.DataFrame],
     sheet: str,
-) -> list[str]:
-    """Return tickers from ``sheet`` where column A contains an asterisk."""
+) -> list[dict[str, str | float | int]]:
+    """Return ranking and detail info for tickers starred in ``sheet``.
 
-    df = excel_data.get(sheet)
-    if df is None or df.empty or df.shape[1] < 2:
-        return []
-    mask = df.iloc[:, 0].astype(str).str.contains(r"\*")
-    tickers = (
-        df.loc[mask, df.columns[1]]
-        .astype(str)
-        .str.strip()
-    )
-    tickers = tickers[~tickers.str.lower().str.contains("average")]
-    return tickers.tolist()
+    The function searches ``sheet`` in ``portfolio_data`` for rows where column
+    A contains ``*`` and extracts the tickers from column B. If no starred rows
+    are found there, it falls back to ``ranking_data``.  For each ticker the
+    ranking values are pulled from the rankings workbook using
+    :func:`get_fund_rankings` and the detailed columns (fund type, currency,
+    recent returns, fees, etc.) are pulled using :func:`get_fund_details`.
 
+    Each element in the returned list contains the ticker, the workbook where
+    the star was found (``"portfolio"`` or ``"ranking"``), and the combined
+    ranking and detail values.
+    """
 
-def get_starred_ticker_rankings(
+    tickers = get_starred_tickers(portfolio_data, sheet)
+    workbook = "portfolio"
+    if not tickers:
+        tickers = get_starred_tickers(ranking_data, sheet)
+        workbook = "ranking"
+
+    rows: list[dict[str, str | float | int]] = []
+    for ticker in tickers:
+        row: dict[str, str | float | int] = {"ticker": ticker, "workbook": workbook}
+
+        ranks = get_fund_rankings(ranking_data, ticker, sheet)
+        if ranks:
+            vals = ranks.get(sheet) or next(iter(ranks.values()))
+            row.update(vals)
+
+        details = get_fund_details(ranking_data, ticker, sheet)
+        if details:
+            vals = details.get(sheet) or next(iter(details.values()))
+            row.update(vals)
+
+        rows.append(row)
+
+    return rows
+
+def get_starred_ticker_details(
     excel_data: dict[str, pd.DataFrame],
     ranking_data: dict[str, pd.DataFrame],
     sheet: str,
 ) -> list[dict[str, float | int | str]]:
-    """Return ranking rows for each ticker marked with ``*`` in ``sheet``.
+    """Return ranking and detail rows for tickers marked with ``*`` in ``sheet``.
 
-    Starred rows may live in either the portfolio workbook or the rankings
-    workbook. The function first checks the portfolio workbook for the sheet and
-    falls back to the rankings workbook if no starred tickers are found there.
-
-    The result is a list of dictionaries that can be easily rendered as a table.
-    Each dictionary contains the ticker and the ranking values for the specified
-    sheet (or the first sheet where the ticker is found).
+    The function first looks for starred rows in the portfolio workbook. If none
+    are found it falls back to the rankings workbook. Ranking and detailed fund
+    information is always pulled from ``ranking_data``.  Each returned mapping
+    contains the ticker, the workbook the star was found in, the ranking values
+    and fund detail columns (fund type, currency, recent returns and fees).
     """
 
-    tickers = get_starred_tickers(excel_data, sheet)
-    if not tickers:
+    portfolio_tickers = get_starred_tickers(excel_data, sheet)
+    workbook = "portfolio"
+    if portfolio_tickers:
+        tickers = portfolio_tickers
+    else:
         tickers = get_starred_tickers(ranking_data, sheet)
+        workbook = "ranking"
+
     rows: list[dict[str, float | int | str]] = []
     for ticker in tickers:
-        ranks = get_fund_rankings(ranking_data, ticker, sheet)
-        if ranks:
-            # Prefer the specified sheet if available, otherwise take the first
-            if sheet in ranks:
-                vals = ranks[sheet]
-            else:
-                vals = next(iter(ranks.values()))
-            row = {"ticker": ticker, **vals}
+        ranks = get_fund_rankings(ranking_data, ticker, sheet) or {}
+        if sheet in ranks:
+            rank_vals = ranks[sheet]
+        elif ranks:
+            rank_vals = next(iter(ranks.values()))
         else:
-            row = {"ticker": ticker}
-        rows.append(row)
+            rank_vals = {}
+
+        details = get_fund_details(ranking_data, ticker, sheet) or {}
+        if sheet in details:
+            detail_vals = details[sheet]
+        elif details:
+            detail_vals = next(iter(details.values()))
+        else:
+            detail_vals = {}
+
+        rows.append({"ticker": ticker, "workbook": workbook, **detail_vals, **rank_vals})
+
     return rows
 
 def get_fund_details(
