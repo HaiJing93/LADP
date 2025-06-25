@@ -264,6 +264,23 @@ STARRED_RANKINGS_TOOL_SCHEMA = {
     },
 }
 
+STARRED_DETAILS_TOOL_SCHEMA = {
+    "name": "get_starred_ticker_details",
+    "description": (
+        "Find starred rows in the given sheet and return both ranking information "
+        "and detailed fund columns like fund type, currency, recent returns and fees. "
+        "Each element includes the ticker, the workbook the star was found in, and "
+        "its rank values. Rankings and details are looked up in the uploaded rankings workbook."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {"type": "string", "description": "Excel sheet name"},
+        },
+        "required": ["sheet"],
+    },
+}
+
 FUND_DETAILS_TOOL_SCHEMA = {
     "name": "get_fund_details",
     "description": (
@@ -349,6 +366,7 @@ TOOLS = [
     {"type": "function", "function": FUND_MONTH_VALUE_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_RANKINGS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": STARRED_RANKINGS_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": STARRED_DETAILS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_DETAILS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
