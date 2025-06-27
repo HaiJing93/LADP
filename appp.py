@@ -32,6 +32,7 @@ from features.excel.loader import (
     get_fund_rankings,
     get_starred_ticker_details,
     get_fund_details,
+    count_rows,
 )
 
 # --------------------------------------------------------------------------- #
@@ -721,6 +722,8 @@ if user_input:
                             )
                         else:
                             tool_content = json.dumps(rankings)
+                            used_sheet = sheet if sheet in rankings else next(iter(rankings))
+                            st.session_state["last_ranking_sheet"] = used_sheet
                     except Exception as exc:
                         tool_content = f"Error retrieving fund rankings: {exc}"
                         st.error(tool_content)
@@ -752,6 +755,7 @@ if user_input:
                                 tool_content = "No starred tickers found in column A."
                             else:
                                 tool_content = json.dumps(res)
+                                st.session_state["last_ranking_sheet"] = sheet
                         except Exception as exc:
                             if str(exc) == "sheet not found":
                                 pass
@@ -809,6 +813,23 @@ if user_input:
                     except Exception as exc:
                         tool_content = f"Error retrieving fund details: {exc}"
                         st.error(tool_content)
+
+            # ---------- ranking sheet row count ----------------------- #
+            elif name == "get_ranking_row_count":
+                ranking_data = st.session_state.get("ranking_excel_data")
+                if not ranking_data:
+                    tool_content = "No rankings Excel available. Please upload a rankings file first."
+                else:
+                    sheet = args.get("sheet") or st.session_state.get("last_ranking_sheet")
+                    if not sheet:
+                        tool_content = "No sheet specified and no previous ranking sheet available."
+                    else:
+                        df = ranking_data.get(sheet)
+                        if df is None:
+                            tool_content = f"Sheet '{sheet}' not found in rankings workbook."
+                        else:
+                            tool_content = json.dumps({"sheet": sheet, "row_count": count_rows(ranking_data, sheet)})
+                            st.session_state["last_ranking_sheet"] = sheet
 
             # ---------- combined fund metrics ----------------------------- #
             elif name == "calculate_fund_metrics":
