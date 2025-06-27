@@ -349,6 +349,20 @@ PORTFOLIO_EXCEL_TOOL_SCHEMA = {
     },
 }
 
+RANKING_ROW_COUNT_TOOL_SCHEMA = {
+    "name": "get_ranking_row_count",
+    "description": (
+        "Return the number of rows (funds) in a sheet from the uploaded rankings workbook. "
+        "If no sheet is supplied the assistant should use the sheet from the most recent ranking lookup."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sheet": {"type": "string", "description": "Ranking workbook sheet name"},
+        },
+    },
+}
+
 # ------------------------------------------------------------------- #
 #  Master list passed to OpenAI                                       #
 # ------------------------------------------------------------------- #
@@ -370,4 +384,5 @@ TOOLS = [
     {"type": "function", "function": FUND_DETAILS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": FUND_METRICS_TOOL_SCHEMA},  # ← NEW
     {"type": "function", "function": PORTFOLIO_EXCEL_TOOL_SCHEMA},  # ← NEW
+    {"type": "function", "function": RANKING_ROW_COUNT_TOOL_SCHEMA},  # ← NEW    
     ]
