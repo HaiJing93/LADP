@@ -402,3 +402,11 @@ def get_fund_details(
 def list_sheets(excel_data: dict[str, pd.DataFrame]) -> list[str]:
     """Return all sheet names present in the uploaded workbook."""
     return list(excel_data)
+
+
+def count_rows(excel_data: dict[str, pd.DataFrame], sheet: str) -> int:
+    """Return the number of rows in ``sheet`` from the uploaded workbook."""
+    df = excel_data.get(sheet)
+    if df is None:
+        return 0
+    return int(df.shape[0])
